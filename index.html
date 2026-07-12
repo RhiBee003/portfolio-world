@@ -14,8 +14,32 @@
 
       <div class="hud">
         <div class="hud-brand">Rhiannon Black · Developer</div>
-        <div class="hud-hint" id="hud-hint">Arrows move · WASD look · click to lock cursor</div>
       </div>
+
+      <aside class="controls-key" id="controls-key" aria-label="Controls">
+        <button
+          class="controls-key-toggle"
+          id="controls-key-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="controls-key-body"
+          title="Toggle controls"
+        >
+          ?
+        </button>
+        <div class="controls-key-body" id="controls-key-body">
+          <p class="controls-key-title">Controls</p>
+          <ul class="controls-key-list">
+            <li><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> Move</li>
+            <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Look</li>
+            <li><kbd>Shift</kbd> Sprint</li>
+            <li><kbd>Space</kbd> Jump</li>
+            <li><kbd>Click</kbd> Lock / unlock cursor</li>
+            <li><kbd>Esc</kbd> Free cursor</li>
+            <li><kbd>Mouse</kbd> Look when locked</li>
+          </ul>
+        </div>
+      </aside>
 
       <div class="cursor-hint" id="cursor-hint" hidden>
         <span id="cursor-hint-text">Click to lock cursor</span>

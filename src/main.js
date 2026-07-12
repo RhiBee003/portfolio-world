@@ -11,9 +11,10 @@ import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
-const hudHint = document.getElementById("hud-hint");
 const cursorHint = document.getElementById("cursor-hint");
 const cursorHintText = document.getElementById("cursor-hint-text");
+const controlsKey = document.getElementById("controls-key");
+const controlsKeyToggle = document.getElementById("controls-key-toggle");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -80,6 +81,25 @@ let input;
 const zoneUI = createZoneUI();
 
 input = createInput(canvas);
+
+function toggleControlsKey() {
+  if (!controlsKey || !controlsKeyToggle) return;
+  const collapsed = controlsKey.classList.toggle("is-collapsed");
+  controlsKeyToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+}
+
+if (controlsKeyToggle) {
+  controlsKeyToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleControlsKey();
+  });
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "?" && !e.repeat) {
+    toggleControlsKey();
+  }
+});
 
 const orbitDistance = 10.5;
 const orbitHeight = 4.8;
@@ -165,20 +185,8 @@ function getOverviewLookAt(target) {
 
 function applyCamera() {
   const easedBlend = smoothstep(fpBlend);
-  const firstPerson = easedBlend > 0.28;
 
   catMesh.visible = easedBlend < 0.9;
-
-  if (hudHint) {
-    const panelOpen = zoneUI.isOpen();
-    hudHint.classList.toggle("is-hidden", panelOpen);
-
-    if (!panelOpen) {
-      hudHint.textContent = input.pointerLocked
-        ? "Arrows move · WASD look · click or Esc to unlock"
-        : "Arrows move · WASD look · click to lock cursor";
-    }
-  }
 
   if (cursorHint && cursorHintText) {
     if (zoneUI.isOpen()) {

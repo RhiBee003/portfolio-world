@@ -63,16 +63,91 @@ body[data-cursor-mode="look"] #world-canvas {
   color: rgba(26, 26, 26, 0.42);
 }
 
-.hud-hint {
-  font-size: 0.75rem;
-  color: rgba(26, 26, 26, 0.38);
-  text-align: right;
-  max-width: 16rem;
+.controls-key {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 12;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.controls-key-toggle {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  color: rgba(26, 26, 26, 0.55);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.controls-key-toggle:hover {
+  color: rgba(26, 26, 26, 0.8);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.controls-key-body {
+  min-width: 11.5rem;
+  padding: 0.65rem 0.75rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.controls-key.is-collapsed .controls-key-body {
+  display: none;
+}
+
+.controls-key-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.45);
+}
+
+.controls-key-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.controls-key-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  color: #555;
   line-height: 1.4;
 }
 
-.hud-hint.is-hidden {
-  opacity: 0;
+.controls-key-list li:last-child {
+  margin-bottom: 0;
+}
+
+.controls-key-list kbd {
+  display: inline-block;
+  min-width: 1.2rem;
+  padding: 0.08rem 0.32rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-align: center;
+  color: #333;
 }
 
 .cursor-hint {
@@ -227,8 +302,12 @@ body[data-cursor-mode="look"] #world-canvas {
     flex-direction: column;
   }
 
-  .hud-hint {
-    text-align: left;
-    max-width: none;
+  .controls-key {
+    left: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .controls-key-body {
+    min-width: 10rem;
   }
 }
