@@ -60,7 +60,8 @@ body[data-cursor-mode="look"] #world-canvas {
 .hud-brand {
   font-size: 0.8rem;
   font-weight: 500;
-  color: rgba(26, 26, 26, 0.42);
+  color: #1a1a1a;
+  opacity: 1;
 }
 
 .controls-key {
