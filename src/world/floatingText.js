@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { pathSideAt, pathCenterAt } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
+import { RESUME_FLOAT_SECTIONS } from "./resume.js";
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
@@ -18,19 +19,22 @@ function proximityAt(catPosition, anchor, radius) {
 }
 
 function wrapLines(ctx, text, maxWidth) {
-  const words = text.split(/\s+/);
+  const paragraphs = text.split("\n");
   const lines = [];
-  let line = "";
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width > maxWidth && line) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = test;
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    let line = "";
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
     }
+    if (line) lines.push(line);
   }
-  if (line) lines.push(line);
   return lines;
 }
 
@@ -162,7 +166,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
 
   if (stop.userData.panels.length > 0) {
     const baseY = stop.userData.panels[0].userData.baseY;
-    const underline = createUnderline(4.2);
+    const underline = createUnderline(options.underlineWidth ?? 4.2);
     underline.position.y = baseY - 0.55;
     stop.userData.underline = underline;
     textGroup.add(underline);
@@ -170,6 +174,27 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
 
   stop.add(textGroup);
   return stop;
+}
+
+function addFloatingPanels(textGroup, panels, sections, phaseSeed) {
+  sections.forEach((section, sectionIndex) => {
+    const panel = createTextPanel(section.text, {
+      fontSize: section.fontSize ?? 16,
+      fontWeight: section.fontWeight ?? 500,
+      color: section.color ?? "#333",
+      worldWidth: section.worldWidth ?? 7,
+      maxWidth: section.maxWidth ?? 480,
+      lineHeight: section.lineHeight ?? 1.35,
+      y: section.y,
+      phase: phaseSeed + sectionIndex * 0.35,
+      freq: section.freq ?? 0.42,
+      drift: section.drift ?? 0.025,
+    });
+    panel.position.y = section.y;
+    panel.userData.baseY = section.y;
+    panels.push(panel);
+    textGroup.add(panel);
+  });
 }
 
 export function createPathFloatingLabels(curve) {
@@ -184,6 +209,11 @@ export function createPathFloatingLabels(curve) {
       wp.radius * 1.8,
       (textGroup, panels) => {
         if (wp.id === "hero") return;
+
+        if (wp.id === "resume") {
+          addFloatingPanels(textGroup, panels, RESUME_FLOAT_SECTIONS, index * 0.8);
+          return;
+        }
 
         const panel = createTextPanel(wp.title, {
           fontSize: 30,
@@ -200,7 +230,8 @@ export function createPathFloatingLabels(curve) {
         panel.userData.baseY = 4.8;
         panels.push(panel);
         textGroup.add(panel);
-      }
+      },
+      wp.id === "resume" ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET } : {}
     );
     group.add(stop);
   });

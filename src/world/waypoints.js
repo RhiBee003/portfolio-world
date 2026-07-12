@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { pathCenterAt } from "./pathLayout.js";
+import { RESUME_ZONE } from "./resume.js";
 
 export const RING_T_OFFSET = -0.045;
 export const RING_ZONE_RADIUS = 3.1;
@@ -12,7 +13,6 @@ export const WAYPOINTS = [
     body: "Creative developer and designer. Follow the trail to explore projects.",
     links: [
       { label: "Classic portfolio", href: "https://rhibee003.github.io" },
-      { label: "Resume", href: "/portfolio-world/resume.pdf#page=1" },
     ],
     pathT: 0.06,
     side: 1,
@@ -46,6 +46,17 @@ export const WAYPOINTS = [
     side: 1,
     sideOffset: 8.5,
     radius: 6,
+  },
+  {
+    id: "resume",
+    tag: RESUME_ZONE.tag,
+    title: RESUME_ZONE.title,
+    body: RESUME_ZONE.body,
+    links: RESUME_ZONE.links,
+    pathT: 0.54,
+    side: -1,
+    sideOffset: 9.5,
+    radius: 8,
   },
   {
     id: "about",
