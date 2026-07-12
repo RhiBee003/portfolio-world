@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { buildingMaterial, brickMaterial } from "./materials.js";
+import { START_OVERPASS_T } from "./waypoints.js";
 
 function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
   const cos = Math.cos(rotY);
@@ -29,8 +30,9 @@ function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) 
 }
 
 function createStartOverpass(curve, group, collisions) {
-  const start = curve.getPointAt(0);
-  const tangent = curve.getTangentAt(0).normalize();
+  const overpassT = START_OVERPASS_T;
+  const start = curve.getPointAt(overpassT);
+  const tangent = curve.getTangentAt(overpassT).normalize();
   const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
   const yaw = Math.atan2(tangent.x, tangent.z);
 

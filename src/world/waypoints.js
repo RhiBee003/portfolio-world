@@ -4,6 +4,7 @@ import { RESUME_ZONE } from "./resume.js";
 
 export const RING_T_OFFSET = -0.045;
 export const RING_ZONE_RADIUS = 3.1;
+export const START_OVERPASS_T = 0.018;
 
 export const WAYPOINTS = [
   {
@@ -115,6 +116,8 @@ export function getWaypointSidePosition(wp, curve) {
 }
 
 export const PATH_POINTS = [
+  new THREE.Vector3(0, 0, 27),
+  new THREE.Vector3(0, 0, 24),
   new THREE.Vector3(0, 0, 21),
   new THREE.Vector3(0, 0, 14),
   new THREE.Vector3(0, 0, 8),
