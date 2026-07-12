@@ -98,12 +98,68 @@ function createStartOverpass(curve, group, collisions) {
   const barrierZ = cz - tangent.z * 3.6;
   addBox(group, collisions, barrierX, 1.1, barrierZ, spanW - 4, 2.2, 0.5, yaw, dark);
 
-  const wingOffsets = [-7.5, 7.5];
-  wingOffsets.forEach((offset) => {
-    const wx = cx + normal.x * offset;
-    const wz = cz + normal.z * offset;
-    addBox(group, collisions, wx, 0, wz, 3.5, 8 + Math.abs(offset) * 0.15, 4, yaw, buildingMaterial("light"));
-  });
+  function addConnectedWing(side) {
+    const sign = side === "right" ? 1 : -1;
+    const pillarOuter = 5.5 + 0.7;
+    const wingW = 4.2;
+    const wingD = spanD + 0.45;
+    const wingH = deckY + deckH * 0.45;
+    const centerOff = sign * (pillarOuter + wingW / 2);
+    const wx = cx + normal.x * centerOff;
+    const wz = cz + normal.z * centerOff;
+
+    addBox(group, collisions, wx, 0, wz, wingW, wingH, wingD, yaw, buildingMaterial("light"));
+
+    addBox(
+      group,
+      [],
+      cx + normal.x * sign * (pillarOuter + wingW * 0.34),
+      deckY - deckH * 0.1,
+      cz,
+      wingW * 0.72,
+      deckH * 1.35,
+      wingD * 0.9,
+      yaw,
+      concrete,
+      false
+    );
+  }
+
+  addConnectedWing("left");
+  addConnectedWing("right");
+
+  const rightPillarOuter = 5.5 + 0.7;
+  const rightWingW = 4.2;
+  const rightBuildingX = cx + normal.x * (rightPillarOuter + rightWingW + 2.4);
+  const rightBuildingZ = cz - tangent.z * 0.8;
+  addBox(
+    group,
+    collisions,
+    rightBuildingX,
+    0,
+    rightBuildingZ,
+    5,
+    deckY + 2.4,
+    spanD + 1.2,
+    yaw,
+    buildingMaterial("mid")
+  );
+
+  const connectorX = cx + normal.x * (rightPillarOuter + rightWingW * 0.82);
+  const connectorZ = cz - tangent.z * 0.35;
+  addBox(
+    group,
+    [],
+    connectorX,
+    deckY * 0.52,
+    connectorZ,
+    2.6,
+    deckY * 0.95,
+    spanD * 0.75,
+    yaw,
+    buildingMaterial("dark"),
+    false
+  );
 
   const tunnelLight = new THREE.Mesh(
     new THREE.PlaneGeometry(spanW - 3, 2.8),
