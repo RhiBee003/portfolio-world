@@ -164,8 +164,9 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = proximityRadius;
   stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
+  const labelRadius = proximityRadius / 1.8;
   stop.userData.textProximityRadius =
-    options.textProximityRadius ?? Math.max(proximityRadius * 0.72, 5.5);
+    options.textProximityRadius ?? sideOffset + labelRadius * 1.25;
 
   const ring = createPathRing();
   stop.userData.ring = ring;
@@ -246,8 +247,8 @@ export function createPathFloatingLabels(curve) {
         textGroup.add(panel);
       },
       wp.id === "resume"
-        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.radius * 1.45 }
-        : { textProximityRadius: wp.radius * 1.12 }
+        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.sideOffset + wp.radius * 1.55 }
+        : {}
     );
     group.add(stop);
   });
@@ -278,8 +279,8 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
     const { baseY, phase, freq, drift } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
     panel.material.opacity = textProximity * TEXT_FADE_MAX;
-    panel.material.alphaTest = textProximity < 0.2 ? 0.35 : 0.08;
-    panel.visible = textProximity > 0.02;
+    panel.material.alphaTest = 0.05;
+    panel.visible = textProximity > 0.01;
   });
 
   if (stop.userData.textGroup && catPosition) {
@@ -298,11 +299,12 @@ export function animateFloatingText(group, elapsed, catPosition) {
       stop.userData.proximityAnchor,
       stop.userData.proximityRadius
     );
-    const textProximity = textFadeAt(
+    const distFade = textFadeAt(
       catPosition,
       stop.userData.textAnchor,
       stop.userData.textProximityRadius
     );
+    const textProximity = Math.max(distFade, ringProximity * 0.9);
     applyProximity(stop, ringProximity, textProximity, elapsed, catPosition);
   });
 }
