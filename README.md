@@ -13,7 +13,8 @@ Open [http://localhost:5174](http://localhost:5174)
 
 ## Controls
 
-- **WASD** or **arrow keys** — move
+- **WASD** — move
+- **Arrow keys** and **mouse** (when cursor locked) — perspective
 - **Shift** — sprint
 - Walk near pink markers to open project panels
 - Click centered project photo in lightbox… (N/A here — walk to zones)

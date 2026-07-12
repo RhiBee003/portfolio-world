@@ -1,11 +1,20 @@
 import * as THREE from "three";
-import { pathSideAt, pathCenterAt } from "./pathLayout.js";
+import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { RESUME_FLOAT_SECTIONS } from "./resume.js";
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const FLOATING_TEXT_COLOR = "#000000";
+/** Path-t distance ahead of the cat where labels begin fading in. */
+const PATH_FADE_RANGE = 0.14;
+const GLOW_MAX_OPACITY = 0.42;
+const LOOK_DOT_START = 0.58;
+const LOOK_DOT_FULL = 0.9;
+
+const _panelWorld = new THREE.Vector3();
+const _toPanel = new THREE.Vector3();
+const _cameraForward = new THREE.Vector3();
 
 function smoothstep(t) {
   const x = THREE.MathUtils.clamp(t, 0, 1);
@@ -17,6 +26,21 @@ function proximityAt(catPosition, anchor, radius) {
   const dz = catPosition.z - anchor.z;
   const dist = Math.sqrt(dx * dx + dz * dz);
   return smoothstep(1 - dist / radius);
+}
+
+function textFadeAt(catPosition, anchor, radius) {
+  const dx = catPosition.x - anchor.x;
+  const dz = catPosition.z - anchor.z;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  if (dist >= radius) return 0;
+  return smoothstep(1 - dist / radius);
+}
+
+function pathApproachFade(catPathT, labelPathT) {
+  const ahead = labelPathT - catPathT;
+  if (ahead <= 0) return 1;
+  if (ahead >= PATH_FADE_RANGE) return 0;
+  return smoothstep(1 - ahead / PATH_FADE_RANGE);
 }
 
 function wrapLines(ctx, text, maxWidth) {
@@ -78,17 +102,83 @@ function createTextTexture(text, options = {}) {
   return { texture, width: canvas.width, height: canvas.height };
 }
 
+function createGlowTexture(text, options = {}) {
+  const fontSize = options.fontSize ?? 56;
+  const fontWeight = options.fontWeight ?? 600;
+  const maxWidth = options.maxWidth ?? 720;
+  const padding = options.padding ?? 28;
+
+  const measureCanvas = document.createElement("canvas");
+  const measureCtx = measureCanvas.getContext("2d");
+  measureCtx.font = `${fontWeight} ${fontSize}px ${FONT}`;
+  const lines = wrapLines(measureCtx, text, maxWidth - padding * 2);
+  const lineHeight = fontSize * (options.lineHeight ?? 1.35);
+
+  let textWidth = 0;
+  for (const line of lines) {
+    textWidth = Math.max(textWidth, measureCtx.measureText(line).width);
+  }
+
+  const glowPad = Math.ceil(fontSize * 1.6);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(textWidth + padding * 2 + glowPad * 2);
+  canvas.height = Math.ceil(lines.length * lineHeight + padding * 2 + glowPad * 2);
+  const ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = `${fontWeight} ${fontSize}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(255, 248, 252, 0.95)";
+  ctx.shadowBlur = fontSize * 1.15;
+  ctx.fillStyle = "rgba(255, 236, 244, 0.72)";
+
+  const cx = canvas.width / 2;
+  lines.forEach((line, index) => {
+    const y = glowPad + padding + lineHeight * index + lineHeight / 2;
+    ctx.fillText(line, cx, y);
+    ctx.fillText(line, cx, y);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return { texture, width: canvas.width, height: canvas.height };
+}
+
 function createTextPanel(text, options = {}) {
   const { texture, width, height } = createTextTexture(text, options);
+  const { texture: glowTexture } = createGlowTexture(text, options);
   const worldWidth = options.worldWidth ?? 10;
   const worldHeight = worldWidth * (height / width);
+  const glowWorldHeight = worldWidth * (glowTexture.image.height / glowTexture.image.width);
 
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(worldWidth, worldHeight),
+  const panel = new THREE.Group();
+  const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
+  const glowGeometry = new THREE.PlaneGeometry(worldWidth * 1.14, glowWorldHeight * 1.08);
+
+  const glowMesh = new THREE.Mesh(
+    glowGeometry,
+    new THREE.MeshBasicMaterial({
+      map: glowTexture,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      fog: false,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  glowMesh.position.z = -0.05;
+  glowMesh.renderOrder = 8;
+  glowMesh.frustumCulled = false;
+
+  const textMesh = new THREE.Mesh(
+    geometry,
     new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: 1,
+      opacity: 0,
       alphaTest: 0.08,
       depthWrite: false,
       depthTest: false,
@@ -97,13 +187,19 @@ function createTextPanel(text, options = {}) {
       side: THREE.DoubleSide,
     })
   );
-  mesh.renderOrder = 10;
-  mesh.frustumCulled = false;
-  mesh.userData.baseY = options.y ?? 4;
-  mesh.userData.phase = options.phase ?? 0;
-  mesh.userData.freq = options.freq ?? 0.7;
-  mesh.userData.drift = options.drift ?? 0.08;
-  return mesh;
+  textMesh.renderOrder = 10;
+  textMesh.frustumCulled = false;
+
+  panel.add(glowMesh);
+  panel.add(textMesh);
+  panel.userData.textMesh = textMesh;
+  panel.userData.glowMesh = glowMesh;
+  panel.userData.glowLevel = 0;
+  panel.userData.baseY = options.y ?? 4;
+  panel.userData.phase = options.phase ?? 0;
+  panel.userData.freq = options.freq ?? 0.7;
+  panel.userData.drift = options.drift ?? 0.08;
+  return panel;
 }
 
 function createPathRing() {
@@ -151,8 +247,13 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
 
   const stop = new THREE.Group();
   stop.position.set(ringCenter.x, 0, ringCenter.z);
+  stop.userData.pathT = triggerT;
   stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = proximityRadius;
+  stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
+  const labelRadius = proximityRadius / 1.8;
+  stop.userData.textProximityRadius =
+    options.textProximityRadius ?? sideOffset + labelRadius * 1.25;
 
   const ring = createPathRing();
   stop.userData.ring = ring;
@@ -232,11 +333,14 @@ export function createPathFloatingLabels(curve) {
         panels.push(panel);
         textGroup.add(panel);
       },
-      wp.id === "resume" ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET } : {}
+      wp.id === "resume"
+        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.sideOffset + wp.radius * 1.55 }
+        : {}
     );
     group.add(stop);
   });
 
+  group.userData.curve = curve;
   return group;
 }
 
@@ -250,20 +354,49 @@ function faceGroup(group, catPosition) {
   }
 }
 
-function applyProximity(stop, ringProximity, elapsed, catPosition) {
+function lookAtPanelFactor(camera, panel) {
+  if (!camera) return 0;
+
+  panel.getWorldPosition(_panelWorld);
+  _toPanel.copy(_panelWorld).sub(camera.position);
+  const dist = _toPanel.length();
+  if (dist < 0.5) return 1;
+
+  _toPanel.multiplyScalar(1 / dist);
+  camera.getWorldDirection(_cameraForward);
+
+  const dot = _cameraForward.dot(_toPanel);
+  if (dot <= LOOK_DOT_START) return 0;
+  return smoothstep((dot - LOOK_DOT_START) / (LOOK_DOT_FULL - LOOK_DOT_START));
+}
+
+function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt) {
   stop.userData.ring.material.opacity = ringProximity * 0.65;
   stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
 
   if (stop.userData.underline) {
-    stop.userData.underline.material.opacity = ringProximity;
-    stop.userData.underline.scale.x = 0.15 + ringProximity * 0.85;
+    stop.userData.underline.material.opacity = textProximity;
+    stop.userData.underline.scale.x = 0.15 + textProximity * 0.85;
   }
 
   stop.userData.panels.forEach((panel) => {
-    const { baseY, phase, freq, drift } = panel.userData;
+    const { baseY, phase, freq, drift, textMesh, glowMesh } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    panel.material.opacity = 1;
-    panel.visible = true;
+
+    const lookFactor = lookAtPanelFactor(camera, panel);
+    panel.userData.glowLevel = THREE.MathUtils.lerp(
+      panel.userData.glowLevel ?? 0,
+      lookFactor,
+      1 - Math.exp(-9 * dt)
+    );
+
+    textMesh.material.opacity = textProximity;
+    textMesh.material.alphaTest = 0.05;
+    textMesh.visible = textProximity > 0.01;
+
+    const glowOpacity = textProximity * panel.userData.glowLevel * GLOW_MAX_OPACITY;
+    glowMesh.material.opacity = glowOpacity;
+    glowMesh.visible = glowOpacity > 0.008;
   });
 
   if (stop.userData.textGroup && catPosition) {
@@ -271,8 +404,11 @@ function applyProximity(stop, ringProximity, elapsed, catPosition) {
   }
 }
 
-export function animateFloatingText(group, elapsed, catPosition) {
+export function animateFloatingText(group, elapsed, catPosition, camera, dt = 0.016) {
   if (!catPosition) return;
+
+  const curve = group.userData.curve;
+  const catPathT = curve ? closestPathT(curve, catPosition.x, catPosition.z) : 0;
 
   group.children.forEach((stop) => {
     if (!stop.userData.proximityAnchor) return;
@@ -282,6 +418,13 @@ export function animateFloatingText(group, elapsed, catPosition) {
       stop.userData.proximityAnchor,
       stop.userData.proximityRadius
     );
-    applyProximity(stop, ringProximity, elapsed, catPosition);
+    const spatialFade = textFadeAt(
+      catPosition,
+      stop.userData.textAnchor,
+      stop.userData.textProximityRadius
+    );
+    const pathFade = pathApproachFade(catPathT, stop.userData.pathT ?? 0);
+    const textProximity = pathFade * Math.max(spatialFade, ringProximity * 0.9);
+    applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt);
   });
 }

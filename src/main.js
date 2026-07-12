@@ -211,7 +211,7 @@ function animate() {
   applyCamera();
 
   const elapsed = clock.elapsedTime;
-  animateFloatingText(floatingText, elapsed, cat.position);
+  animateFloatingText(floatingText, elapsed, cat.position, camera, dt);
   animatePathArrows(pathArrows, elapsed);
   animateFountain(terminiGroup, elapsed);
 

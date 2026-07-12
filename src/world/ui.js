@@ -1,4 +1,4 @@
-export function createZoneUI() {
+export function createZoneUI(options = {}) {
   const panel = document.getElementById("zone-panel");
   const closeBtn = document.getElementById("zone-close");
   const tag = document.getElementById("zone-tag");
@@ -36,6 +36,7 @@ export function createZoneUI() {
       panel.style.animation = "none";
       void panel.offsetWidth;
       panel.style.animation = "";
+      options.onOpen?.();
     }
   }
 
@@ -43,6 +44,7 @@ export function createZoneUI() {
     if (!activeId) return;
     activeId = null;
     panel.hidden = true;
+    options.onClose?.();
   }
 
   closeBtn.addEventListener("click", (e) => {
@@ -90,15 +92,15 @@ export function createInput(canvas, options = {}) {
   }
 
   function updateState() {
-    state.moveForward = keys.has("arrowup");
-    state.moveBack = keys.has("arrowdown");
-    state.moveLeft = keys.has("arrowleft");
-    state.moveRight = keys.has("arrowright");
-    state.lookUp = keys.has("w");
-    state.lookDown = keys.has("s");
-    state.lookLeft = keys.has("a");
-    state.lookRight = keys.has("d");
-    state.sprint = keys.has("shift");
+    state.moveForward = keys.has("KeyW");
+    state.moveBack = keys.has("KeyS");
+    state.moveLeft = keys.has("KeyA");
+    state.moveRight = keys.has("KeyD");
+    state.lookUp = keys.has("ArrowUp");
+    state.lookDown = keys.has("ArrowDown");
+    state.lookLeft = keys.has("ArrowLeft");
+    state.lookRight = keys.has("ArrowRight");
+    state.sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
   }
 
   function releaseLock() {
@@ -195,11 +197,14 @@ export function createInput(canvas, options = {}) {
     if (e.code.startsWith("Arrow")) {
       e.preventDefault();
     }
-    keys.add(e.key.toLowerCase());
+    if (e.code === "KeyW" || e.code === "KeyA" || e.code === "KeyS" || e.code === "KeyD") {
+      e.preventDefault();
+    }
+    keys.add(e.code);
     updateState();
   });
   window.addEventListener("keyup", (e) => {
-    keys.delete(e.key.toLowerCase());
+    keys.delete(e.code);
     updateState();
   });
 
