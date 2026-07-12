@@ -8,7 +8,7 @@ const FONT =
 const FLOATING_TEXT_COLOR = "#000000";
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.14;
-const GLOW_MAX_OPACITY = 0.38;
+const GLOW_MAX_OPACITY = 0.55;
 const TEXT_SHOW_THRESHOLD = 0.1;
 const LOOK_DOT_START = 0.58;
 const LOOK_DOT_FULL = 0.9;
@@ -120,27 +120,35 @@ function createGlowTexture(text, options = {}) {
     textWidth = Math.max(textWidth, measureCtx.measureText(line).width);
   }
 
-  const innerWidth = textWidth + padding * 2;
-  const innerHeight = lines.length * lineHeight + padding * 2;
-  const bleed = Math.ceil(fontSize * 2.4);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(innerWidth + bleed * 2);
-  canvas.height = Math.ceil(innerHeight + bleed * 2);
-  const ctx = canvas.getContext("2d");
+  const innerWidth = Math.ceil(textWidth + padding * 2);
+  const innerHeight = Math.ceil(lines.length * lineHeight + padding * 2);
+  const bleed = Math.ceil(fontSize * 2.2);
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = `${fontWeight} ${fontSize}px ${FONT}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.shadowColor = "rgba(255, 252, 254, 0.92)";
-  ctx.shadowBlur = fontSize * 1.35;
-  ctx.fillStyle = "rgba(0, 0, 0, 0.002)";
-
-  const cx = canvas.width / 2;
+  const mask = document.createElement("canvas");
+  mask.width = innerWidth;
+  mask.height = innerHeight;
+  const maskCtx = mask.getContext("2d");
+  maskCtx.font = `${fontWeight} ${fontSize}px ${FONT}`;
+  maskCtx.fillStyle = "#ffffff";
+  maskCtx.textAlign = "center";
+  maskCtx.textBaseline = "middle";
   lines.forEach((line, index) => {
-    const y = bleed + padding + lineHeight * index + lineHeight / 2;
-    ctx.fillText(line, cx, y);
+    const y = padding + lineHeight * index + lineHeight / 2;
+    maskCtx.fillText(line, innerWidth / 2, y);
   });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = innerWidth + bleed * 2;
+  canvas.height = innerHeight + bleed * 2;
+  const ctx = canvas.getContext("2d");
+  const blurPx = Math.max(6, fontSize * 0.72);
+  ctx.filter = `blur(${blurPx}px)`;
+  ctx.drawImage(mask, bleed, bleed);
+  ctx.filter = "none";
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = "rgba(255, 240, 246, 0.82)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = "source-over";
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -168,10 +176,9 @@ function createTextPanel(text, options = {}) {
       depthTest: false,
       fog: false,
       toneMapped: false,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
     })
   );
-  glowMesh.position.z = -0.06;
   glowMesh.renderOrder = 8;
   glowMesh.frustumCulled = false;
 
@@ -186,7 +193,7 @@ function createTextPanel(text, options = {}) {
       depthTest: false,
       fog: false,
       toneMapped: false,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
     })
   );
   textMesh.renderOrder = 10;
@@ -359,7 +366,13 @@ function faceGroup(group, catPosition) {
 function lookAtPanelFactor(camera, panel) {
   if (!camera) return 0;
 
-  panel.getWorldPosition(_panelWorld);
+  const textMesh = panel.userData.textMesh;
+  if (textMesh) {
+    textMesh.getWorldPosition(_panelWorld);
+  } else {
+    panel.getWorldPosition(_panelWorld);
+  }
+
   _toPanel.copy(_panelWorld).sub(camera.position);
   const dist = _toPanel.length();
   if (dist < 0.5) return 1;
@@ -385,14 +398,14 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
     const { baseY, phase, freq, drift, textMesh, glowMesh } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
 
+    const showText = textProximity > TEXT_SHOW_THRESHOLD;
     const lookFactor = lookAtPanelFactor(camera, panel);
+    const glowTarget = Math.max(lookFactor, showText ? textProximity * 0.45 : 0);
     panel.userData.glowLevel = THREE.MathUtils.lerp(
       panel.userData.glowLevel ?? 0,
-      lookFactor,
+      glowTarget,
       1 - Math.exp(-9 * dt)
     );
-
-    const showText = textProximity > TEXT_SHOW_THRESHOLD;
     textMesh.material.opacity = showText ? 1 : 0;
     textMesh.visible = showText;
 
