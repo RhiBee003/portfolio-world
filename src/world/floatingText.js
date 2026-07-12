@@ -3,6 +3,8 @@ import { pathSideAt, pathCenterAt } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { RESUME_FLOAT_SECTIONS } from "./resume.js";
 
+const FONT =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const TEXT_FADE_MIN = 0.1;
 const TEXT_FADE_MAX = 1;
 
