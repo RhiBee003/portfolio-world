@@ -11,8 +11,6 @@ import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
-const cursorHint = document.getElementById("cursor-hint");
-const cursorHintText = document.getElementById("cursor-hint-text");
 const controlsKey = document.getElementById("controls-key");
 const controlsKeyToggle = document.getElementById("controls-key-toggle");
 
@@ -187,17 +185,6 @@ function applyCamera() {
   const easedBlend = smoothstep(fpBlend);
 
   catMesh.visible = easedBlend < 0.9;
-
-  if (cursorHint && cursorHintText) {
-    if (zoneUI.isOpen()) {
-      cursorHint.hidden = false;
-      cursorHintText.textContent = input.pointerLocked
-        ? "Click or Esc to unlock cursor for links"
-        : "Click to lock cursor and look around";
-    } else {
-      cursorHint.hidden = true;
-    }
-  }
 
   cat.getEyePosition(eyePosition);
   cat.getEyeLookAt(eyeLookAt);
