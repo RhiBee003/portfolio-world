@@ -14,7 +14,7 @@ export const WAYPOINTS = [
     links: [
       { label: "Classic portfolio", href: "https://rhibee003.github.io" },
     ],
-    pathT: 0.06,
+    pathT: 0.11,
     side: 1,
     sideOffset: 8,
     radius: 7,
