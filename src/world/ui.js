@@ -1,4 +1,4 @@
-export function createZoneUI() {
+export function createZoneUI(options = {}) {
   const panel = document.getElementById("zone-panel");
   const closeBtn = document.getElementById("zone-close");
   const tag = document.getElementById("zone-tag");
@@ -8,37 +8,49 @@ export function createZoneUI() {
 
   let activeId = null;
 
-  function show(zone) {
-    if (!zone || activeId === zone.id) return;
-    activeId = zone.id;
-    tag.textContent = zone.tag;
-    title.textContent = zone.title;
-    body.textContent = zone.body;
-    links.innerHTML = "";
-    zone.links.forEach((link) => {
-      const a = document.createElement("a");
-      a.href = link.href;
-      a.textContent = link.label;
-      a.target = link.href.startsWith("http") ? "_blank" : "_self";
-      a.rel = "noopener noreferrer";
-      links.appendChild(a);
-    });
-    panel.hidden = false;
-    panel.style.animation = "none";
-    void panel.offsetWidth;
-    panel.style.animation = "";
+  function isOpen() {
+    return Boolean(panel && !panel.hidden);
+  }
 
-    if (document.pointerLockElement) {
-      document.exitPointerLock();
+  function show(zone) {
+    if (!zone) return;
+
+    const isNewZone = activeId !== zone.id;
+    activeId = zone.id;
+
+    if (isNewZone) {
+      tag.textContent = zone.tag;
+      title.textContent = zone.title;
+      body.textContent = zone.body;
+      links.innerHTML = "";
+      zone.links.forEach((link) => {
+        const a = document.createElement("a");
+        a.href = link.href;
+        a.textContent = link.label;
+        a.target = link.href.startsWith("http") ? "_blank" : "_self";
+        a.rel = "noopener noreferrer";
+        links.appendChild(a);
+      });
+      panel.hidden = false;
+      panel.style.animation = "none";
+      void panel.offsetWidth;
+      panel.style.animation = "";
     }
+
+    options.onShow?.();
   }
 
   function hide() {
+    if (!activeId) return;
     activeId = null;
     panel.hidden = true;
+    options.onHide?.();
   }
 
-  closeBtn.addEventListener("click", hide);
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hide();
+  });
 
   panel.addEventListener("mousedown", (e) => e.stopPropagation());
   panel.addEventListener("click", (e) => e.stopPropagation());
@@ -46,6 +58,7 @@ export function createZoneUI() {
   return {
     show,
     hide,
+    isOpen,
     getActiveId: () => activeId,
   };
 }
@@ -62,12 +75,29 @@ export function createInput(canvas, options = {}) {
     pointerLocked: false,
     lookX: 0,
     lookY: 0,
+    cursorMode: "free",
   };
 
   const sensitivity = 0.0024;
   let dragLook = false;
   let lastDragX = 0;
   let lastDragY = 0;
+  let lockRequested = false;
+
+  function isPanelOpen() {
+    return options.isPanelOpen?.() ?? false;
+  }
+
+  function setCursorMode(mode) {
+    state.cursorMode = mode;
+    document.body.dataset.cursorMode = mode;
+
+    if (mode === "free") {
+      lockRequested = false;
+      dragLook = false;
+      releaseLock();
+    }
+  }
 
   function updateState() {
     state.forward = keys.has("w") || keys.has("arrowup");
@@ -78,6 +108,7 @@ export function createInput(canvas, options = {}) {
   }
 
   function releaseLock() {
+    lockRequested = false;
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
@@ -85,26 +116,33 @@ export function createInput(canvas, options = {}) {
   }
 
   function requestLock() {
-    if (document.pointerLockElement !== canvas) {
-      canvas.requestPointerLock();
-    }
+    if (isPanelOpen()) return;
+    if (document.pointerLockElement === canvas) return;
+
+    lockRequested = true;
+    canvas.requestPointerLock();
   }
 
-  function engageView(e) {
-    if (e?.target?.closest?.(".zone-panel")) return;
+  function enterLookMode() {
+    if (isPanelOpen()) return;
+    setCursorMode("look");
     options.onEngageView?.();
     requestLock();
   }
 
+  function enterFreeMode() {
+    setCursorMode("free");
+  }
+
   canvas.addEventListener("mousedown", (e) => {
     if (e.button !== 0 || e.target.closest(".zone-panel")) return;
-    dragLook = !state.pointerLocked;
+    if (isPanelOpen()) return;
+
+    dragLook = true;
     lastDragX = e.clientX;
     lastDragY = e.clientY;
-    engageView(e);
+    enterLookMode();
   });
-
-  canvas.addEventListener("click", engageView);
 
   window.addEventListener("mouseup", () => {
     dragLook = false;
@@ -112,13 +150,31 @@ export function createInput(canvas, options = {}) {
 
   document.addEventListener("pointerlockchange", () => {
     state.pointerLocked = document.pointerLockElement === canvas;
+
     if (state.pointerLocked) {
+      lockRequested = false;
       dragLook = false;
+      state.cursorMode = "look";
+      document.body.dataset.cursorMode = "look";
+      return;
+    }
+
+    state.pointerLocked = false;
+    lockRequested = false;
+    dragLook = false;
+
+    if (!isPanelOpen()) {
+      state.cursorMode = "free";
+      document.body.dataset.cursorMode = "free";
     }
   });
 
   document.addEventListener("pointerlockerror", () => {
     state.pointerLocked = false;
+    lockRequested = false;
+    dragLook = false;
+    state.cursorMode = "free";
+    document.body.dataset.cursorMode = "free";
   });
 
   document.addEventListener("mousemove", (e) => {
@@ -128,7 +184,7 @@ export function createInput(canvas, options = {}) {
       return;
     }
 
-    if (!dragLook) return;
+    if (!dragLook || isPanelOpen()) return;
     state.lookX += (e.clientX - lastDragX) * sensitivity;
     state.lookY += (e.clientY - lastDragY) * sensitivity;
     lastDragX = e.clientX;
@@ -137,7 +193,7 @@ export function createInput(canvas, options = {}) {
 
   window.addEventListener("keydown", (e) => {
     if (e.code === "Escape") {
-      releaseLock();
+      enterFreeMode();
       return;
     }
     if (e.code === "Space") {
@@ -158,7 +214,10 @@ export function createInput(canvas, options = {}) {
   window.addEventListener("blur", () => {
     keys.clear();
     updateState();
+    enterFreeMode();
   });
+
+  document.body.dataset.cursorMode = "free";
 
   state.consumeLook = () => {
     const dx = state.lookX;
@@ -170,6 +229,9 @@ export function createInput(canvas, options = {}) {
 
   state.releaseLock = releaseLock;
   state.requestLock = requestLock;
+  state.enterLookMode = enterLookMode;
+  state.enterFreeMode = enterFreeMode;
+  state.isPanelOpen = isPanelOpen;
 
   return state;
 }

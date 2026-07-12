@@ -34,6 +34,14 @@ body {
   touch-action: none;
 }
 
+body[data-cursor-mode="free"] #world-canvas {
+  cursor: default;
+}
+
+body[data-cursor-mode="look"] #world-canvas {
+  cursor: none;
+}
+
 .hud {
   position: fixed;
   top: 0;
