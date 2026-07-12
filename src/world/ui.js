@@ -77,6 +77,8 @@ export function createInput(canvas, options = {}) {
   };
 
   const sensitivity = 0.0024;
+  let wantsPointerLock = false;
+  let relockQueued = false;
 
   function setCursorMode(mode) {
     state.cursorMode = mode;
@@ -103,6 +105,8 @@ export function createInput(canvas, options = {}) {
   }
 
   function unlockCursor() {
+    wantsPointerLock = false;
+    relockQueued = false;
     releaseLock();
     setCursorMode("free");
     options.onReleaseView?.();
@@ -110,7 +114,19 @@ export function createInput(canvas, options = {}) {
 
   function lockCursor() {
     if (state.pointerLocked) return;
+    wantsPointerLock = true;
     requestLock();
+  }
+
+  function queueRelock() {
+    if (!wantsPointerLock || state.pointerLocked || relockQueued) return;
+    relockQueued = true;
+    requestAnimationFrame(() => {
+      relockQueued = false;
+      if (wantsPointerLock && !state.pointerLocked) {
+        requestLock();
+      }
+    });
   }
 
   function toggleCursorLock() {
@@ -130,6 +146,7 @@ export function createInput(canvas, options = {}) {
     state.pointerLocked = document.pointerLockElement === canvas;
 
     if (state.pointerLocked) {
+      wantsPointerLock = true;
       setCursorMode("look");
       options.onEngageView?.();
       return;
@@ -137,6 +154,10 @@ export function createInput(canvas, options = {}) {
 
     setCursorMode("free");
     options.onReleaseView?.();
+
+    if (wantsPointerLock) {
+      queueRelock();
+    }
   });
 
   document.addEventListener("pointerlockerror", () => {

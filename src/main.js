@@ -130,8 +130,7 @@ function updateViewAngles(dt) {
 }
 
 function updateCameraBlend(dt) {
-  const wantFirstPerson = input.pointerLocked && !zoneUI.isOpen();
-  const target = wantFirstPerson ? 1 : 0;
+  const target = input.pointerLocked ? 1 : 0;
   fpBlend = THREE.MathUtils.lerp(fpBlend, target, 1 - Math.exp(-6 * dt));
 }
 
