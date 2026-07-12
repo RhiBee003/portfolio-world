@@ -1,0 +1,254 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  background: linear-gradient(180deg, #f6c8d7 0%, #ffe8f0 42%, #ffffff 100%);
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#world-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  pointer-events: none;
+}
+
+.hud-brand {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.55);
+}
+
+.hud-hint {
+  font-size: 0.78rem;
+  color: rgba(26, 26, 26, 0.5);
+  text-align: right;
+  max-width: 22rem;
+  line-height: 1.5;
+}
+
+.hud-hint kbd {
+  display: inline-block;
+  min-width: 1.35rem;
+  padding: 0.1rem 0.35rem;
+  margin: 0 0.1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(27, 31, 36, 0.15);
+  background: rgba(246, 248, 250, 0.9);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 15;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.crosshair::before,
+.crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(26, 26, 26, 0.55);
+  border-radius: 1px;
+}
+
+.crosshair::before {
+  left: 50%;
+  top: 2px;
+  width: 2px;
+  height: 10px;
+  margin-left: -1px;
+}
+
+.crosshair::after {
+  top: 50%;
+  left: 2px;
+  width: 10px;
+  height: 2px;
+  margin-top: -1px;
+}
+
+.zone-panel {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  z-index: 20;
+  width: min(420px, calc(100% - 2rem));
+  padding: 1.25rem 1.35rem 1.35rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(246, 200, 215, 0.65);
+  box-shadow: 0 20px 50px rgba(246, 200, 215, 0.35);
+  transform: translateX(-50%) translateY(12px);
+  opacity: 0;
+  animation: panel-in 0.35s ease forwards;
+  pointer-events: auto;
+}
+
+.zone-panel[hidden] {
+  display: none;
+}
+
+@keyframes panel-in {
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.zone-close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(246, 200, 215, 0.45);
+  color: #1a1a1a;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zone-tag {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c97a96;
+}
+
+.zone-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.zone-panel p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #5a5a5a;
+}
+
+.zone-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.zone-links a {
+  display: inline-flex;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #1a1a1a;
+  background: #f6c8d7;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.zone-links a:hover {
+  transform: translateY(-1px);
+  background: #e8a4bc;
+}
+
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f6c8d7 0%, #ffffff 100%);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.loading.is-done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-inner {
+  text-align: center;
+  color: #4a4a4a;
+}
+
+.loading-spinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 0.75rem;
+  border: 2px solid rgba(27, 31, 36, 0.12);
+  border-top-color: rgba(27, 31, 36, 0.55);
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .hud {
+    flex-direction: column;
+  }
+
+  .hud-hint {
+    text-align: left;
+    max-width: none;
+  }
+}
