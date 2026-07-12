@@ -55,7 +55,6 @@ export const WAYPOINTS = [
     links: [
       { label: "LinkedIn", href: "https://www.linkedin.com/feed/" },
       { label: "GitHub", href: "https://github.com/RhiBee003" },
-      { label: "Resume", href: "/portfolio-world/resume.pdf" },
     ],
     pathT: 0.64,
     side: -1,
@@ -69,7 +68,6 @@ export const WAYPOINTS = [
     body: "Interested in collaborating? Reach out anytime.",
     links: [
       { label: "Email me", href: "mailto:rhiblack0017@gmail.com" },
-      { label: "Resume", href: "/portfolio-world/resume.pdf" },
     ],
     pathT: 0.84,
     side: 1,
