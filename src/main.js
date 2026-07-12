@@ -11,11 +11,6 @@ import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
-const controlsKey = document.getElementById("controls-key");
-const controlsKeyToggle = document.getElementById("controls-key-toggle");
-const zoneControlsMore = document.getElementById("zone-controls-more");
-const compactControlsMq = window.matchMedia("(max-width: 900px)");
-const integratedLayoutMq = window.matchMedia("(max-width: 1024px)");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -79,67 +74,9 @@ let viewYaw = cat.facing + 0.38;
 let viewPitch = -0.14;
 
 let input;
-const zoneUI = createZoneUI({
-  onOpen() {
-    document.body.classList.add("zone-open");
-    if (integratedLayoutMq.matches) {
-      setControlsKeyCollapsed(true);
-    }
-  },
-  onClose() {
-    document.body.classList.remove("zone-open");
-    applyResponsiveControls();
-  },
-});
+const zoneUI = createZoneUI();
 
 input = createInput(canvas);
-
-function setControlsKeyCollapsed(collapsed, { userExpanded = null } = {}) {
-  if (!controlsKey || !controlsKeyToggle) return;
-  controlsKey.classList.toggle("is-collapsed", collapsed);
-  controlsKeyToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-
-  if (userExpanded === true) {
-    controlsKey.classList.add("is-user-expanded");
-  } else if (userExpanded === false) {
-    controlsKey.classList.remove("is-user-expanded");
-  }
-}
-
-function toggleControlsKey() {
-  if (!controlsKey || !controlsKeyToggle) return;
-  const collapsed = controlsKey.classList.contains("is-collapsed");
-  setControlsKeyCollapsed(!collapsed, { userExpanded: collapsed });
-}
-
-function applyResponsiveControls() {
-  if (!controlsKey || controlsKey.classList.contains("is-user-expanded")) return;
-  if (compactControlsMq.matches) {
-    setControlsKeyCollapsed(true);
-  }
-}
-
-if (controlsKeyToggle) {
-  controlsKeyToggle.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleControlsKey();
-  });
-}
-
-zoneControlsMore?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  setControlsKeyCollapsed(false, { userExpanded: true });
-  controlsKeyToggle?.focus();
-});
-
-compactControlsMq.addEventListener("change", applyResponsiveControls);
-applyResponsiveControls();
-
-window.addEventListener("keydown", (e) => {
-  if (e.key === "?" && !e.repeat) {
-    toggleControlsKey();
-  }
-});
 
 const orbitDistance = 10.5;
 const orbitHeight = 4.8;
