@@ -1,4 +1,4 @@
-export function createZoneUI(options = {}) {
+export function createZoneUI() {
   const panel = document.getElementById("zone-panel");
   const closeBtn = document.getElementById("zone-close");
   const tag = document.getElementById("zone-tag");
@@ -37,15 +37,12 @@ export function createZoneUI(options = {}) {
       void panel.offsetWidth;
       panel.style.animation = "";
     }
-
-    options.onShow?.();
   }
 
   function hide() {
     if (!activeId) return;
     activeId = null;
     panel.hidden = true;
-    options.onHide?.();
   }
 
   closeBtn.addEventListener("click", (e) => {
@@ -80,20 +77,10 @@ export function createInput(canvas, options = {}) {
   };
 
   const sensitivity = 0.0024;
-  let lockRequested = false;
-
-  function isPanelOpen() {
-    return options.isPanelOpen?.() ?? false;
-  }
 
   function setCursorMode(mode) {
     state.cursorMode = mode;
     document.body.dataset.cursorMode = mode;
-
-    if (mode === "free") {
-      lockRequested = false;
-      releaseLock();
-    }
   }
 
   function updateState() {
@@ -105,63 +92,56 @@ export function createInput(canvas, options = {}) {
   }
 
   function releaseLock() {
-    lockRequested = false;
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
   }
 
   function requestLock() {
-    if (isPanelOpen()) return;
     if (document.pointerLockElement === canvas) return;
-
-    lockRequested = true;
     canvas.requestPointerLock();
   }
 
-  function enterLookMode() {
-    if (isPanelOpen()) return;
-    if (state.pointerLocked) return;
-    requestLock();
-  }
-
-  function enterFreeMode() {
+  function unlockCursor() {
+    releaseLock();
     setCursorMode("free");
     options.onReleaseView?.();
   }
 
+  function lockCursor() {
+    if (state.pointerLocked) return;
+    requestLock();
+  }
+
+  function toggleCursorLock() {
+    if (state.pointerLocked) {
+      unlockCursor();
+    } else {
+      lockCursor();
+    }
+  }
+
   canvas.addEventListener("click", (e) => {
     if (e.button !== 0 || e.target.closest(".zone-panel")) return;
-    if (isPanelOpen()) return;
-    enterLookMode();
+    toggleCursorLock();
   });
 
   document.addEventListener("pointerlockchange", () => {
     state.pointerLocked = document.pointerLockElement === canvas;
 
     if (state.pointerLocked) {
-      lockRequested = false;
-      state.cursorMode = "look";
-      document.body.dataset.cursorMode = "look";
+      setCursorMode("look");
       options.onEngageView?.();
       return;
     }
 
-    state.pointerLocked = false;
-    lockRequested = false;
-
-    if (!isPanelOpen()) {
-      state.cursorMode = "free";
-      document.body.dataset.cursorMode = "free";
-      options.onReleaseView?.();
-    }
+    setCursorMode("free");
+    options.onReleaseView?.();
   });
 
   document.addEventListener("pointerlockerror", () => {
     state.pointerLocked = false;
-    lockRequested = false;
-    state.cursorMode = "free";
-    document.body.dataset.cursorMode = "free";
+    setCursorMode("free");
     options.onReleaseView?.();
   });
 
@@ -173,7 +153,7 @@ export function createInput(canvas, options = {}) {
 
   window.addEventListener("keydown", (e) => {
     if (e.code === "Escape") {
-      enterFreeMode();
+      unlockCursor();
       return;
     }
     if (e.code === "Space") {
@@ -194,7 +174,7 @@ export function createInput(canvas, options = {}) {
   window.addEventListener("blur", () => {
     keys.clear();
     updateState();
-    enterFreeMode();
+    unlockCursor();
   });
 
   document.body.dataset.cursorMode = "free";
@@ -209,9 +189,9 @@ export function createInput(canvas, options = {}) {
 
   state.releaseLock = releaseLock;
   state.requestLock = requestLock;
-  state.enterLookMode = enterLookMode;
-  state.enterFreeMode = enterFreeMode;
-  state.isPanelOpen = isPanelOpen;
+  state.lockCursor = lockCursor;
+  state.unlockCursor = unlockCursor;
+  state.toggleCursorLock = toggleCursorLock;
 
   return state;
 }

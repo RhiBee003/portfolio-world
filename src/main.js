@@ -12,6 +12,8 @@ import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
 const hudHint = document.getElementById("hud-hint");
+const cursorHint = document.getElementById("cursor-hint");
+const cursorHintText = document.getElementById("cursor-hint-text");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -75,15 +77,9 @@ let viewYaw = cat.facing;
 let viewPitch = -0.06;
 
 let input;
-let zoneUI;
+const zoneUI = createZoneUI();
 
-zoneUI = createZoneUI({
-  onShow: () => input?.enterFreeMode(),
-});
-
-input = createInput(canvas, {
-  isPanelOpen: () => zoneUI.isOpen(),
-});
+input = createInput(canvas);
 
 const orbitDistance = 10.5;
 const orbitHeight = 4.8;
@@ -174,13 +170,20 @@ function applyCamera() {
     hudHint.classList.toggle("is-hidden", panelOpen);
 
     if (!panelOpen) {
-      if (input.pointerLocked) {
-        hudHint.textContent = "WASD move · Esc to free cursor";
-      } else if (firstPerson) {
-        hudHint.textContent = "WASD move · click to look";
-      } else {
-        hudHint.textContent = "WASD to move · click to look";
-      }
+      hudHint.textContent = input.pointerLocked
+        ? "WASD move · click or Esc to unlock cursor"
+        : "WASD to move · click to lock cursor";
+    }
+  }
+
+  if (cursorHint && cursorHintText) {
+    if (zoneUI.isOpen()) {
+      cursorHint.hidden = false;
+      cursorHintText.textContent = input.pointerLocked
+        ? "Click or Esc to unlock cursor for links"
+        : "Click to lock cursor and look around";
+    } else {
+      cursorHint.hidden = true;
     }
   }
 

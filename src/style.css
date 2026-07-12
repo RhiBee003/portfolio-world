@@ -75,6 +75,27 @@ body[data-cursor-mode="look"] #world-canvas {
   opacity: 0;
 }
 
+.cursor-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 7.25rem;
+  z-index: 21;
+  transform: translateX(-50%);
+  padding: 0.38rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: #555;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.cursor-hint[hidden] {
+  display: none;
+}
+
 .zone-panel {
   position: fixed;
   left: 50%;
