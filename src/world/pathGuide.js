@@ -17,15 +17,15 @@ const arrowGeo = new THREE.ShapeGeometry(createArrowShape());
 
 export function createPathArrows(curve) {
   const group = new THREE.Group();
-  const step = 5.5;
+  const step = 4.6;
   const length = curve.getLength();
   const count = Math.floor(length / step);
 
   const pink = new THREE.MeshStandardMaterial({
-    color: 0xf0d0dc,
-    emissive: 0xf6c8d7,
-    emissiveIntensity: 0.08,
-    roughness: 0.7,
+    color: 0xf8a8c4,
+    emissive: 0xffc0d8,
+    emissiveIntensity: 0.32,
+    roughness: 0.55,
     metalness: 0,
     side: THREE.DoubleSide,
   });
@@ -39,8 +39,8 @@ export function createPathArrows(curve) {
     const arrow = new THREE.Mesh(arrowGeo, pink);
     arrow.rotation.order = "YXZ";
     arrow.rotation.set(-Math.PI / 2, yaw + Math.PI, 0);
-    arrow.position.set(center.x, 0.028, center.z);
-    arrow.scale.set(0.9, 0.9, 1);
+    arrow.position.set(center.x, 0.05, center.z);
+    arrow.scale.set(1.2, 1.2, 1);
     arrow.receiveShadow = true;
     arrow.frustumCulled = false;
 
