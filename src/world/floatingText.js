@@ -26,7 +26,7 @@ function textFadeAt(catPosition, anchor, radius) {
   if (dist >= radius) return 0;
   const t = 1 - dist / radius;
   const eased = smoothstep(t);
-  return eased * eased;
+  return eased;
 }
 
 function wrapLines(ctx, text, maxWidth) {
@@ -165,7 +165,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.userData.proximityRadius = proximityRadius;
   stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
   stop.userData.textProximityRadius =
-    options.textProximityRadius ?? Math.max(proximityRadius * 0.58, 4.5);
+    options.textProximityRadius ?? Math.max(proximityRadius * 0.72, 5.5);
 
   const ring = createPathRing();
   stop.userData.ring = ring;
@@ -246,8 +246,8 @@ export function createPathFloatingLabels(curve) {
         textGroup.add(panel);
       },
       wp.id === "resume"
-        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.radius * 1.15 }
-        : { textProximityRadius: wp.radius * 0.92 }
+        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.radius * 1.45 }
+        : { textProximityRadius: wp.radius * 1.12 }
     );
     group.add(stop);
   });
