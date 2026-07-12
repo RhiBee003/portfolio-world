@@ -8,7 +8,8 @@ const FONT =
 const FLOATING_TEXT_COLOR = "#000000";
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.14;
-const GLOW_MAX_OPACITY = 0.42;
+const GLOW_MAX_OPACITY = 0.38;
+const TEXT_SHOW_THRESHOLD = 0.1;
 const LOOK_DOT_START = 0.58;
 const LOOK_DOT_FULL = 0.9;
 
@@ -119,24 +120,25 @@ function createGlowTexture(text, options = {}) {
     textWidth = Math.max(textWidth, measureCtx.measureText(line).width);
   }
 
-  const glowPad = Math.ceil(fontSize * 1.6);
+  const innerWidth = textWidth + padding * 2;
+  const innerHeight = lines.length * lineHeight + padding * 2;
+  const bleed = Math.ceil(fontSize * 2.4);
   const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(textWidth + padding * 2 + glowPad * 2);
-  canvas.height = Math.ceil(lines.length * lineHeight + padding * 2 + glowPad * 2);
+  canvas.width = Math.ceil(innerWidth + bleed * 2);
+  canvas.height = Math.ceil(innerHeight + bleed * 2);
   const ctx = canvas.getContext("2d");
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.font = `${fontWeight} ${fontSize}px ${FONT}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.shadowColor = "rgba(255, 248, 252, 0.95)";
-  ctx.shadowBlur = fontSize * 1.15;
-  ctx.fillStyle = "rgba(255, 236, 244, 0.72)";
+  ctx.shadowColor = "rgba(255, 252, 254, 0.92)";
+  ctx.shadowBlur = fontSize * 1.35;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.002)";
 
   const cx = canvas.width / 2;
   lines.forEach((line, index) => {
-    const y = glowPad + padding + lineHeight * index + lineHeight / 2;
-    ctx.fillText(line, cx, y);
+    const y = bleed + padding + lineHeight * index + lineHeight / 2;
     ctx.fillText(line, cx, y);
   });
 
@@ -150,11 +152,11 @@ function createTextPanel(text, options = {}) {
   const { texture: glowTexture } = createGlowTexture(text, options);
   const worldWidth = options.worldWidth ?? 10;
   const worldHeight = worldWidth * (height / width);
-  const glowWorldHeight = worldWidth * (glowTexture.image.height / glowTexture.image.width);
+  const glowScale = Math.max(glowTexture.image.width / width, glowTexture.image.height / height);
 
   const panel = new THREE.Group();
   const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
-  const glowGeometry = new THREE.PlaneGeometry(worldWidth * 1.14, glowWorldHeight * 1.08);
+  const glowGeometry = new THREE.PlaneGeometry(worldWidth * glowScale, worldHeight * glowScale);
 
   const glowMesh = new THREE.Mesh(
     glowGeometry,
@@ -166,10 +168,10 @@ function createTextPanel(text, options = {}) {
       depthTest: false,
       fog: false,
       toneMapped: false,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
     })
   );
-  glowMesh.position.z = -0.05;
+  glowMesh.position.z = -0.06;
   glowMesh.renderOrder = 8;
   glowMesh.frustumCulled = false;
 
@@ -179,12 +181,12 @@ function createTextPanel(text, options = {}) {
       map: texture,
       transparent: true,
       opacity: 0,
-      alphaTest: 0.08,
+      alphaTest: 0.12,
       depthWrite: false,
       depthTest: false,
       fog: false,
       toneMapped: false,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
     })
   );
   textMesh.renderOrder = 10;
@@ -390,11 +392,11 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
       1 - Math.exp(-9 * dt)
     );
 
-    textMesh.material.opacity = textProximity;
-    textMesh.material.alphaTest = 0.05;
-    textMesh.visible = textProximity > 0.01;
+    const showText = textProximity > TEXT_SHOW_THRESHOLD;
+    textMesh.material.opacity = showText ? 1 : 0;
+    textMesh.visible = showText;
 
-    const glowOpacity = textProximity * panel.userData.glowLevel * GLOW_MAX_OPACITY;
+    const glowOpacity = showText ? panel.userData.glowLevel * GLOW_MAX_OPACITY : 0;
     glowMesh.material.opacity = glowOpacity;
     glowMesh.visible = glowOpacity > 0.008;
   });
