@@ -119,23 +119,23 @@ export class CatController {
       const forward = new THREE.Vector3(Math.sin(viewYaw), 0, Math.cos(viewYaw)).normalize();
       const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-      if (input.forward) wish.add(forward);
-      if (input.back) wish.sub(forward);
-      if (input.right) wish.add(right);
-      if (input.left) wish.sub(right);
+      if (input.moveForward) wish.add(forward);
+      if (input.moveBack) wish.sub(forward);
+      if (input.moveRight) wish.add(right);
+      if (input.moveLeft) wish.sub(right);
     } else if (viewYaw !== undefined) {
       const camForward = new THREE.Vector3(Math.sin(viewYaw), 0, Math.cos(viewYaw)).normalize();
       const camRight = new THREE.Vector3().crossVectors(camForward, new THREE.Vector3(0, 1, 0)).normalize();
 
-      if (input.forward) wish.add(camForward);
-      if (input.back) wish.sub(camForward);
-      if (input.right) wish.add(camRight);
-      if (input.left) wish.sub(camRight);
+      if (input.moveForward) wish.add(camForward);
+      if (input.moveBack) wish.sub(camForward);
+      if (input.moveRight) wish.add(camRight);
+      if (input.moveLeft) wish.sub(camRight);
     } else {
-      if (input.forward) wish.z -= 1;
-      if (input.back) wish.z += 1;
-      if (input.left) wish.x -= 1;
-      if (input.right) wish.x += 1;
+      if (input.moveForward) wish.z -= 1;
+      if (input.moveBack) wish.z += 1;
+      if (input.moveLeft) wish.x -= 1;
+      if (input.moveRight) wish.x += 1;
     }
 
     const speed = input.sprint && (wish.lengthSq() > 0 || turning) ? this.sprint : this.speed;

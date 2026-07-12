@@ -118,15 +118,20 @@ function smoothstep(t) {
   return x * x * (3 - 2 * x);
 }
 
+const KEY_LOOK_YAW = 1.75;
+const KEY_LOOK_PITCH = 1.15;
+
 function updateViewAngles(dt) {
   const { dx, dy } = input.consumeLook();
-  const hadLook = Math.abs(dx) > 0.00001 || Math.abs(dy) > 0.00001;
+
+  if (input.lookLeft) viewYaw += KEY_LOOK_YAW * dt;
+  if (input.lookRight) viewYaw -= KEY_LOOK_YAW * dt;
+  if (input.lookUp) viewPitch = THREE.MathUtils.clamp(viewPitch - KEY_LOOK_PITCH * dt, -0.52, 0.38);
+  if (input.lookDown) viewPitch = THREE.MathUtils.clamp(viewPitch + KEY_LOOK_PITCH * dt, -0.52, 0.38);
 
   viewYaw -= dx;
   viewPitch = THREE.MathUtils.clamp(viewPitch + dy, -0.52, 0.38);
   cat.viewPitch = THREE.MathUtils.lerp(cat.viewPitch, viewPitch, 1 - Math.exp(-10 * dt));
-
-  return hadLook;
 }
 
 function updateCameraBlend(dt) {
@@ -170,8 +175,8 @@ function applyCamera() {
 
     if (!panelOpen) {
       hudHint.textContent = input.pointerLocked
-        ? "WASD move · click or Esc to unlock cursor"
-        : "WASD to move · click to lock cursor";
+        ? "Arrows move · WASD look · click or Esc to unlock"
+        : "Arrows move · WASD look · click to lock cursor";
     }
   }
 

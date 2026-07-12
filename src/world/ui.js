@@ -64,10 +64,14 @@ export function createZoneUI() {
 export function createInput(canvas, options = {}) {
   const keys = new Set();
   const state = {
-    forward: false,
-    back: false,
-    left: false,
-    right: false,
+    moveForward: false,
+    moveBack: false,
+    moveLeft: false,
+    moveRight: false,
+    lookUp: false,
+    lookDown: false,
+    lookLeft: false,
+    lookRight: false,
     sprint: false,
     jumpQueued: false,
     pointerLocked: false,
@@ -86,10 +90,14 @@ export function createInput(canvas, options = {}) {
   }
 
   function updateState() {
-    state.forward = keys.has("w") || keys.has("arrowup");
-    state.back = keys.has("s") || keys.has("arrowdown");
-    state.left = keys.has("a") || keys.has("arrowleft");
-    state.right = keys.has("d") || keys.has("arrowright");
+    state.moveForward = keys.has("arrowup");
+    state.moveBack = keys.has("arrowdown");
+    state.moveLeft = keys.has("arrowleft");
+    state.moveRight = keys.has("arrowright");
+    state.lookUp = keys.has("w");
+    state.lookDown = keys.has("s");
+    state.lookLeft = keys.has("a");
+    state.lookRight = keys.has("d");
     state.sprint = keys.has("shift");
   }
 
@@ -183,6 +191,9 @@ export function createInput(canvas, options = {}) {
         state.jumpQueued = true;
       }
       return;
+    }
+    if (e.code.startsWith("Arrow")) {
+      e.preventDefault();
     }
     keys.add(e.key.toLowerCase());
     updateState();
