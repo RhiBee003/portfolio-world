@@ -34,8 +34,8 @@ function createStartOverpass(curve, group, collisions) {
   const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
   const yaw = Math.atan2(tangent.x, tangent.z);
 
-  const cx = start.x - tangent.x * 13;
-  const cz = start.z - tangent.z * 13;
+  const cx = start.x;
+  const cz = start.z;
 
   const concrete = buildingMaterial("mid");
   const dark = buildingMaterial("dark");

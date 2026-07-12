@@ -115,6 +115,7 @@ export function getWaypointSidePosition(wp, curve) {
 }
 
 export const PATH_POINTS = [
+  new THREE.Vector3(0, 0, 21),
   new THREE.Vector3(0, 0, 14),
   new THREE.Vector3(0, 0, 8),
   new THREE.Vector3(0.5, 0, 0),
