@@ -11,6 +11,7 @@ import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
+const sceneDim = document.getElementById("scene-dim");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -192,6 +193,8 @@ function applyCamera() {
 }
 
 const clock = new THREE.Clock();
+let textFocusDim = 0;
+const TEXT_FOCUS_DIM_MAX = 0.26;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -211,7 +214,11 @@ function animate() {
   applyCamera();
 
   const elapsed = clock.elapsedTime;
-  animateFloatingText(floatingText, elapsed, cat.position);
+  const textProximity = animateFloatingText(floatingText, elapsed, cat.position);
+  textFocusDim = THREE.MathUtils.lerp(textFocusDim, textProximity * TEXT_FOCUS_DIM_MAX, 1 - Math.exp(-8 * dt));
+  if (sceneDim) {
+    sceneDim.style.opacity = String(textFocusDim);
+  }
   animatePathArrows(pathArrows, elapsed);
   animateFountain(terminiGroup, elapsed);
 

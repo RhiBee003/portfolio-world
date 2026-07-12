@@ -289,7 +289,9 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
 }
 
 export function animateFloatingText(group, elapsed, catPosition) {
-  if (!catPosition) return;
+  if (!catPosition) return 0;
+
+  let maxTextProximity = 0;
 
   group.children.forEach((stop) => {
     if (!stop.userData.proximityAnchor) return;
@@ -305,6 +307,9 @@ export function animateFloatingText(group, elapsed, catPosition) {
       stop.userData.textProximityRadius
     );
     const textProximity = Math.max(distFade, ringProximity * 0.9);
+    maxTextProximity = Math.max(maxTextProximity, textProximity);
     applyProximity(stop, ringProximity, textProximity, elapsed, catPosition);
   });
+
+  return maxTextProximity;
 }
