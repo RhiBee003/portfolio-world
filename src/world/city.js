@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { buildingMaterial } from "./materials.js";
-import { PATH_POINTS } from "./waypoints.js";
+import { PATH_POINTS, START_OVERPASS_T } from "./waypoints.js";
 
 function seededRandom(seed) {
   let s = seed;
@@ -68,6 +68,7 @@ function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
 
   function tryPlace(x, z, rotY) {
     if (distToPath(x, z, curve) < pathClearance) return false;
+    if (z > 14 && z < 22 && x < 10) return false;
     const w = 5 + rand() * 4;
     const d = 5 + rand() * 4;
     const h = 16 + rand() * 12;
@@ -85,6 +86,22 @@ function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
     tryPlace(bounds.xMin + inset, z, Math.PI / 2);
     tryPlace(bounds.xMax - inset, z + spacing * 0.5, -Math.PI / 2);
   }
+}
+
+function placeWestOverpassBuilding(curve, group, collisions) {
+  const start = curve.getPointAt(START_OVERPASS_T);
+  const tangent = curve.getTangentAt(START_OVERPASS_T).normalize();
+  const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+  const yaw = Math.atan2(tangent.x, tangent.z);
+  const pillarOuter = 5.5 + 0.7;
+  const w = 5.8;
+  const d = 6.4;
+  const h = 23;
+  const sign = -1;
+  const bx = start.x + normal.x * (sign * (pillarOuter + w / 2));
+  const bz = start.z + normal.z * (sign * (pillarOuter + w / 2));
+
+  addBuilding(group, collisions, bx, bz, w, d, h, yaw, "dark");
 }
 
 export function createCity(curve) {
@@ -124,6 +141,8 @@ export function createCity(curve) {
     addBuilding(group, collisions, x, z, w, d, h, rotY, tone);
     placed += 1;
   }
+
+  placeWestOverpassBuilding(curve, group, collisions);
 
   return { group, collisions };
 }

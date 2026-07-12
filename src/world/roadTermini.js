@@ -124,68 +124,6 @@ function createStartOverpass(curve, group, collisions) {
     );
   }
 
-  // Path-side abutment: -X reads as the right flank when facing the overpass from the trail.
-  function addPathSideAbutment(sign) {
-    const pillarOuter = 5.5 + 0.7;
-    const inner = cx + normal.x * (sign * pillarOuter);
-    const baseW = 8.4;
-    const baseCenter = inner + normal.x * (sign * (baseW / 2));
-    const baseD = spanD + 1.4;
-    const baseH = deckY + deckH * 0.55;
-
-    addBox(group, collisions, baseCenter, 0, cz, baseW, baseH, baseD, yaw, buildingMaterial("light"));
-
-    addBox(
-      group,
-      [],
-      baseCenter,
-      deckY - deckH * 0.05,
-      cz,
-      baseW * 0.98,
-      deckH * 1.55,
-      baseD * 0.96,
-      yaw,
-      concrete,
-      false
-    );
-
-    const towerW = 5.2;
-    const towerCenter = baseCenter + normal.x * (sign * (baseW / 2 + towerW / 2 - 0.15));
-    const towerH = deckY + 3.1;
-    addBox(group, collisions, towerCenter, 0, cz, towerW, towerH, baseD, yaw, buildingMaterial("mid"));
-
-    addBox(
-      group,
-      [],
-      towerCenter,
-      deckY + deckH * 0.35,
-      cz,
-      towerW * 0.94,
-      deckH * 1.25,
-      baseD * 0.92,
-      yaw,
-      buildingMaterial("dark"),
-      false
-    );
-
-    const bridgeW = 2.2;
-    const bridgeCenter = inner + normal.x * (sign * (bridgeW / 2 - 0.05));
-    addBox(
-      group,
-      [],
-      bridgeCenter,
-      deckY * 0.58,
-      cz,
-      bridgeW,
-      deckY * 0.92,
-      baseD * 0.82,
-      yaw,
-      buildingMaterial("dark"),
-      false
-    );
-  }
-
-  addPathSideAbutment(-1);
   addConnectedWing(1);
 
   const tunnelLight = new THREE.Mesh(
