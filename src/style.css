@@ -7,6 +7,12 @@
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --text-primary: #0a0a0a;
+  --text-secondary: #2e2e2e;
+  --text-muted: #4a4a4a;
+  --surface: #ffffff;
+  --surface-border: rgba(0, 0, 0, 0.14);
+  --surface-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
 }
 
 html,
@@ -18,8 +24,8 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
-  background: #fafafa;
-  color: #1a1a1a;
+  background: #f5f5f5;
+  color: var(--text-primary);
 }
 
 #app {
@@ -58,10 +64,16 @@ body[data-cursor-mode="look"] #world-canvas {
 }
 
 .hud-brand {
+  display: inline-block;
+  padding: 0.38rem 0.62rem;
+  border-radius: 7px;
   font-size: 0.8rem;
-  font-weight: 500;
-  color: #1a1a1a;
-  opacity: 1;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
 }
 
 .controls-key {
@@ -76,18 +88,18 @@ body[data-cursor-mode="look"] #world-canvas {
   min-width: 11.5rem;
   padding: 0.65rem 0.75rem 0.7rem;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
 }
 
 .controls-key-title {
   margin: 0 0 0.45rem;
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(26, 26, 26, 0.45);
+  color: var(--text-muted);
 }
 
 .controls-key-list {
@@ -103,7 +115,7 @@ body[data-cursor-mode="look"] #world-canvas {
   gap: 0.2rem;
   margin: 0 0 0.3rem;
   font-size: 0.72rem;
-  color: #555;
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 
@@ -116,12 +128,12 @@ body[data-cursor-mode="look"] #world-canvas {
   min-width: 1.2rem;
   padding: 0.08rem 0.32rem;
   border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: rgba(0, 0, 0, 0.05);
   font-family: var(--font-mono);
   font-size: 0.65rem;
   text-align: center;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .zone-panel {
@@ -132,9 +144,9 @@ body[data-cursor-mode="look"] #world-canvas {
   width: min(360px, calc(100% - 2rem));
   padding: 1rem 1.1rem 1.1rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
   transform: translateX(-50%) translateY(8px);
   opacity: 0;
   animation: panel-in 0.25s ease forwards;
@@ -161,15 +173,15 @@ body[data-cursor-mode="look"] #world-canvas {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: rgba(26, 26, 26, 0.45);
+  color: var(--text-muted);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .zone-close:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: rgba(26, 26, 26, 0.7);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-primary);
 }
 
 .zone-tag {
@@ -180,15 +192,16 @@ body[data-cursor-mode="look"] #world-canvas {
   margin: 0 0 0.35rem;
   padding-right: 1.5rem;
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 
 .zone-panel p {
   margin: 0;
   font-size: 0.84rem;
   line-height: 1.5;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .zone-links {
@@ -200,10 +213,10 @@ body[data-cursor-mode="look"] #world-canvas {
 
 .zone-links a {
   font-size: 0.84rem;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
-  color: #1a1a1a;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.22);
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(10, 10, 10, 0.35);
   padding-bottom: 1px;
 }
 
@@ -218,7 +231,7 @@ body[data-cursor-mode="look"] #world-canvas {
   z-index: 100;
   display: grid;
   place-items: center;
-  background: #fafafa;
+  background: #f5f5f5;
   transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 
@@ -230,7 +243,7 @@ body[data-cursor-mode="look"] #world-canvas {
 
 .loading-inner {
   text-align: center;
-  color: #4a4a4a;
+  color: var(--text-secondary);
 }
 
 .loading-spinner {
