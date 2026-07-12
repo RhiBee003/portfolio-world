@@ -88,7 +88,7 @@ function createTextPanel(text, options = {}) {
     new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: 0,
+      opacity: 1,
       alphaTest: 0.08,
       depthWrite: false,
       depthTest: false,
