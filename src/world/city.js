@@ -62,7 +62,7 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
 }
 
 function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
-  const spacing = 10;
+  const spacing = 14;
   const inset = 3;
   const pathClearance = 7;
 
@@ -94,7 +94,7 @@ export function createCity(curve) {
 
   const pathClearance = 5.5;
   const bounds = { xMin: -38, xMax: 38, zMin: -145, zMax: 22 };
-  const targetCount = 80;
+  const targetCount = 42;
   let placed = 0;
   let attempts = 0;
 

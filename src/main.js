@@ -12,7 +12,6 @@ import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
 const hudHint = document.getElementById("hud-hint");
-const crosshair = document.getElementById("crosshair");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -28,7 +27,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-const sceneFog = new THREE.Fog(0xfff8fb, 45, 150);
+const sceneFog = new THREE.Fog(0xfafafa, 35, 120);
 scene.fog = sceneFog;
 
 const { sun } = createSunLighting(scene);
@@ -184,20 +183,19 @@ function applyCamera() {
 
   catMesh.visible = easedBlend < 0.9;
 
-  if (crosshair) {
-    crosshair.hidden = easedBlend < 0.45;
-  }
-
   if (hudHint) {
     const panelOpen = zoneUI.isOpen();
-    const lockHint = input.pointerLocked
-      ? " · <kbd>Esc</kbd> free cursor"
-      : panelOpen
-        ? " · click links in panel"
-        : " · click canvas to look";
-    hudHint.innerHTML = firstPerson
-      ? `<kbd>Mouse</kbd> look · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump${lockHint}`
-      : `<kbd>Mouse</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to explore · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump${lockHint}`;
+    hudHint.classList.toggle("is-hidden", panelOpen);
+
+    if (!panelOpen) {
+      if (input.pointerLocked) {
+        hudHint.textContent = "WASD move · Esc to free cursor";
+      } else if (firstPerson) {
+        hudHint.textContent = "WASD move · click to look";
+      } else {
+        hudHint.textContent = "WASD to move · click to look";
+      }
+    }
   }
 
   cat.getEyePosition(eyePosition);
@@ -218,8 +216,8 @@ function applyCamera() {
   camera.near = THREE.MathUtils.lerp(0.1, 0.25, easedBlend);
   camera.updateProjectionMatrix();
 
-  sceneFog.near = THREE.MathUtils.lerp(45, 80, easedBlend);
-  sceneFog.far = THREE.MathUtils.lerp(150, 220, easedBlend);
+  sceneFog.near = THREE.MathUtils.lerp(35, 55, easedBlend);
+  sceneFog.far = THREE.MathUtils.lerp(120, 160, easedBlend);
 
   sun.position.set(
     cat.position.x + SUN_DIRECTION.x * 80,

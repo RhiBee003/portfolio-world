@@ -17,25 +17,16 @@ const arrowGeo = new THREE.ShapeGeometry(createArrowShape());
 
 export function createPathArrows(curve) {
   const group = new THREE.Group();
-  const step = 2.8;
+  const step = 5.5;
   const length = curve.getLength();
   const count = Math.floor(length / step);
 
   const pink = new THREE.MeshStandardMaterial({
-    color: 0xf6c8d7,
-    emissive: 0xe8a4bc,
-    emissiveIntensity: 0.28,
-    roughness: 0.55,
-    metalness: 0.05,
-    side: THREE.DoubleSide,
-  });
-
-  const pinkDark = new THREE.MeshStandardMaterial({
-    color: 0xe8a4bc,
-    emissive: 0xc97a96,
-    emissiveIntensity: 0.22,
-    roughness: 0.55,
-    metalness: 0.05,
+    color: 0xf0d0dc,
+    emissive: 0xf6c8d7,
+    emissiveIntensity: 0.08,
+    roughness: 0.7,
+    metalness: 0,
     side: THREE.DoubleSide,
   });
 
@@ -45,14 +36,13 @@ export function createPathArrows(curve) {
     const tangent = curve.getTangentAt(t).normalize();
     const yaw = Math.atan2(tangent.x, tangent.z);
 
-    const arrow = new THREE.Mesh(arrowGeo, i % 2 === 0 ? pink : pinkDark);
+    const arrow = new THREE.Mesh(arrowGeo, pink);
     arrow.rotation.order = "YXZ";
     arrow.rotation.set(-Math.PI / 2, yaw + Math.PI, 0);
     arrow.position.set(center.x, 0.028, center.z);
-    arrow.scale.set(1.15, 1.15, 1);
+    arrow.scale.set(0.9, 0.9, 1);
     arrow.receiveShadow = true;
     arrow.frustumCulled = false;
-    arrow.userData.phase = i * 0.55;
 
     group.add(arrow);
   }
@@ -60,11 +50,6 @@ export function createPathArrows(curve) {
   return group;
 }
 
-export function animatePathArrows(group, elapsed) {
-  group.children.forEach((arrow) => {
-    const pulse = 0.92 + Math.sin(elapsed * 2.4 + arrow.userData.phase) * 0.08;
-    arrow.scale.set(1.15 * pulse, 1.15 * pulse, 1);
-    arrow.material.emissiveIntensity =
-      0.18 + Math.sin(elapsed * 2.4 + arrow.userData.phase) * 0.12;
-  });
+export function animatePathArrows() {
+  // Static arrows — no pulse animation.
 }

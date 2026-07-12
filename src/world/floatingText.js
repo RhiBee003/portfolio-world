@@ -105,7 +105,7 @@ function createPathRing() {
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(1.4, 2.1, 40),
     new THREE.MeshBasicMaterial({
-      color: 0xf6c8d7,
+      color: 0xf0d4de,
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -119,38 +119,6 @@ function createPathRing() {
   return ring;
 }
 
-function createTextBackdrop(width, height) {
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, height),
-    new THREE.MeshBasicMaterial({
-      color: 0xfff5f8,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      depthTest: false,
-    })
-  );
-  mesh.position.z = -0.05;
-  mesh.renderOrder = 4;
-  mesh.frustumCulled = false;
-  return mesh;
-}
-
-function createUnderline(width) {
-  const line = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, 0.09),
-    new THREE.MeshBasicMaterial({
-      color: 0xe8a4bc,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      depthTest: false,
-    })
-  );
-  line.renderOrder = 4;
-  line.frustumCulled = false;
-  return line;
-}
 
 function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, buildText, options = {}) {
   const ringTOffset = options.ringTOffset ?? RING_T_OFFSET;
@@ -172,96 +140,14 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.userData.textGroup = textGroup;
   stop.userData.panels = [];
 
-  const accents = { backdrop: null, underline: null };
-  buildText(textGroup, stop.userData.panels, accents);
-  stop.userData.backdrop = accents.backdrop;
-  stop.userData.underline = accents.underline;
+  buildText(textGroup, stop.userData.panels);
 
   stop.add(textGroup);
   return stop;
 }
-
-function createSkyName(curve) {
-  const cityCenter = curve.getPointAt(0.38);
-  const ringT = THREE.MathUtils.clamp(0.38 + RING_T_OFFSET, 0.02, 0.98);
-  const ringCenter = pathCenterAt(curve, ringT);
-
-  const stop = new THREE.Group();
-  stop.position.set(ringCenter.x, 0, ringCenter.z);
-  stop.userData.proximityAnchor = ringCenter;
-  stop.userData.proximityRadius = 24;
-  stop.userData.isSkyStop = true;
-
-  const ring = createPathRing();
-  stop.userData.ring = ring;
-  stop.add(ring);
-
-  const name = createTextPanel("Rhiannon Black", {
-    fontSize: 88,
-    fontWeight: 700,
-    color: "#1a1a1a",
-    worldWidth: 14,
-    maxWidth: 900,
-    phase: 0,
-    freq: 0.45,
-    drift: 0.14,
-  });
-  name.position.set(cityCenter.x - ringCenter.x, 22, cityCenter.z - ringCenter.z);
-  name.userData.baseY = 22;
-
-  const textGroup = new THREE.Group();
-  textGroup.add(name);
-  stop.userData.panels = [name];
-  stop.userData.textGroup = textGroup;
-  stop.add(textGroup);
-
-  return stop;
-}
-
-const FLOATING_LABELS = [
-  {
-    text: "Creative developer and designer. Walk the trail to explore projects and ways to connect.",
-    pathT: 0.11,
-    side: -1,
-    offset: 9.5,
-    y: 5.2,
-    fontSize: 30,
-    fontWeight: 500,
-    color: "#4a4a4a",
-    worldWidth: 8.5,
-    maxWidth: 640,
-    phase: 1.2,
-    freq: 0.6,
-    drift: 0.07,
-    proximityRadius: 10,
-  },
-];
 
 export function createPathFloatingLabels(curve) {
   const group = new THREE.Group();
-
-  group.add(createSkyName(curve));
-
-  FLOATING_LABELS.forEach((cfg) => {
-    const stop = createLabelStop(curve, cfg.pathT, cfg.side, cfg.offset, cfg.proximityRadius, (textGroup, panels, accents) => {
-      const backdrop = createTextBackdrop(9, 3.5);
-      backdrop.position.y = cfg.y;
-      accents.backdrop = backdrop;
-      textGroup.add(backdrop);
-
-      const panel = createTextPanel(cfg.text, cfg);
-      panel.position.y = cfg.y;
-      panel.userData.baseY = cfg.y;
-      panels.push(panel);
-      textGroup.add(panel);
-
-      const underline = createUnderline(7);
-      underline.position.y = cfg.y - 1.2;
-      accents.underline = underline;
-      textGroup.add(underline);
-    });
-    group.add(stop);
-  });
 
   WAYPOINTS.forEach((wp, index) => {
     const stop = createLabelStop(
@@ -270,48 +156,24 @@ export function createPathFloatingLabels(curve) {
       wp.side,
       wp.sideOffset,
       wp.radius * 1.8,
-      (textGroup, panels, accents) => {
+      (textGroup, panels) => {
         if (wp.id === "hero") return;
 
-        accents.backdrop = createTextBackdrop(8.5, 5.5);
-        accents.backdrop.position.y = 5;
-        textGroup.add(accents.backdrop);
-
         const panel = createTextPanel(wp.title, {
-          fontSize: 36,
-          fontWeight: 700,
+          fontSize: 30,
+          fontWeight: 600,
           color: "#1a1a1a",
-          worldWidth: 7.5,
-          maxWidth: 520,
-          y: 5.6,
-          phase: index * 1.1,
-          freq: 0.58,
-          drift: 0.08,
+          worldWidth: 6,
+          maxWidth: 420,
+          y: 4.8,
+          phase: index * 0.8,
+          freq: 0.45,
+          drift: 0.03,
         });
-        panel.position.y = 5.6;
-        panel.userData.baseY = 5.6;
+        panel.position.y = 4.8;
+        panel.userData.baseY = 4.8;
         panels.push(panel);
         textGroup.add(panel);
-
-        const tag = createTextPanel(wp.tag, {
-          fontSize: 22,
-          fontWeight: 600,
-          color: "#c97a96",
-          worldWidth: 4.5,
-          maxWidth: 320,
-          y: 4.2,
-          phase: index * 1.1 + 0.4,
-          freq: 0.62,
-          drift: 0.06,
-        });
-        tag.position.y = 4.2;
-        tag.userData.baseY = 4.2;
-        panels.push(tag);
-        textGroup.add(tag);
-
-        accents.underline = createUnderline(5.5);
-        accents.underline.position.y = 3.85;
-        textGroup.add(accents.underline);
       }
     );
     group.add(stop);
@@ -331,33 +193,13 @@ function faceGroup(group, catPosition) {
 }
 
 function applyProximity(stop, proximity, elapsed, catPosition) {
-  const pulse = 1 + Math.sin(elapsed * 2.4) * 0.04 * proximity;
-  const ringScale = stop.userData.isSkyStop ? 2.4 : 1;
-
-  stop.userData.ring.material.opacity = proximity * 0.9;
-  stop.userData.ring.scale.set(
-    (0.6 + proximity * 0.5) * pulse * ringScale,
-    (0.6 + proximity * 0.5) * pulse * ringScale,
-    1
-  );
-
-  if (stop.userData.backdrop) {
-    stop.userData.backdrop.material.opacity = 0;
-  }
-
-  if (stop.userData.underline) {
-    stop.userData.underline.material.opacity = proximity;
-    stop.userData.underline.scale.x = 0.25 + proximity * 0.75;
-  }
+  stop.userData.ring.material.opacity = proximity * 0.55;
+  stop.userData.ring.scale.set(0.85 + proximity * 0.2, 0.85 + proximity * 0.2, 1);
 
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift } = panel.userData;
-    panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift + proximity * 0.22;
+    panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
     panel.material.opacity = 1;
-    panel.material.transparent = true;
-    panel.material.fog = false;
-    panel.material.toneMapped = false;
-    panel.scale.setScalar(1);
   });
 
   if (stop.userData.textGroup && catPosition) {
