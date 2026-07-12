@@ -4,7 +4,7 @@ import { createPath } from "./world/path.js";
 import { createCity, createGround, createPathCurve, checkCollision } from "./world/city.js";
 import { createRoadTermini, animateFountain } from "./world/roadTermini.js";
 import { createCat, CatController } from "./world/cat.js";
-import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius } from "./world/waypoints.js";
+import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointRingT } from "./world/waypoints.js";
 import { createZoneUI, createInput } from "./world/ui.js";
 import { createPathFloatingLabels, animateFloatingText } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
@@ -55,17 +55,13 @@ const catMesh = createCat();
 scene.add(catMesh);
 const cat = new CatController(catMesh);
 
-const pathStartT = 0.08;
-const pathStart = curve.getPointAt(pathStartT);
-const pathStartTangent = curve.getTangentAt(pathStartT).normalize();
-const pathNormal = new THREE.Vector3(-pathStartTangent.z, 0, pathStartTangent.x).normalize();
-const laneOffset = 1.1;
-cat.position.set(
-  pathStart.x + pathNormal.x * laneOffset,
-  0,
-  pathStart.z + pathNormal.z * laneOffset
-);
-cat.facing = Math.atan2(pathStartTangent.x, pathStartTangent.z);
+const heroWaypoint = WAYPOINTS.find((wp) => wp.id === "hero");
+const spawnT = getWaypointRingT(heroWaypoint);
+const spawnRing = getWaypointRingPosition(heroWaypoint, curve);
+const spawnTangent = curve.getTangentAt(spawnT).normalize();
+
+cat.position.set(spawnRing.x, 0, spawnRing.z);
+cat.facing = Math.atan2(spawnTangent.x, spawnTangent.z);
 cat.cat.rotation.y = cat.facing;
 
 let fpBlend = 0;

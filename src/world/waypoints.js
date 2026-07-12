@@ -87,9 +87,12 @@ export const WAYPOINTS = [
   },
 ];
 
+export function getWaypointRingT(wp) {
+  return THREE.MathUtils.clamp(wp.pathT + RING_T_OFFSET, 0.02, 0.98);
+}
+
 export function getWaypointRingPosition(wp, curve) {
-  const ringT = THREE.MathUtils.clamp(wp.pathT + RING_T_OFFSET, 0.02, 0.98);
-  return pathCenterAt(curve, ringT);
+  return pathCenterAt(curve, getWaypointRingT(wp));
 }
 
 export function getWaypointRingRadius() {
