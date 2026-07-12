@@ -12,7 +12,7 @@ export const WAYPOINTS = [
     body: "Creative developer and designer. Follow the trail to explore projects.",
     links: [
       { label: "Classic portfolio", href: "https://rhibee003.github.io" },
-      { label: "Resume", href: "/portfolio-world/resume.pdf" },
+      { label: "Resume", href: "/portfolio-world/resume.pdf#page=1" },
     ],
     pathT: 0.06,
     side: 1,
