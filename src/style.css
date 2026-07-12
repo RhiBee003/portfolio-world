@@ -41,16 +41,6 @@ body {
   touch-action: none;
 }
 
-.scene-dim {
-  position: fixed;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  background: rgba(245, 245, 245, 0.72);
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
-
 body[data-cursor-mode="free"] #world-canvas {
   cursor: default;
 }

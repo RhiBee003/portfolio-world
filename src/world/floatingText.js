@@ -5,7 +5,7 @@ import { RESUME_FLOAT_SECTIONS } from "./resume.js";
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
-const TEXT_FADE_MAX = 1;
+const FLOATING_TEXT_COLOR = "#000000";
 
 function smoothstep(t) {
   const x = THREE.MathUtils.clamp(t, 0, 1);
@@ -17,16 +17,6 @@ function proximityAt(catPosition, anchor, radius) {
   const dz = catPosition.z - anchor.z;
   const dist = Math.sqrt(dx * dx + dz * dz);
   return smoothstep(1 - dist / radius);
-}
-
-function textFadeAt(catPosition, anchor, radius) {
-  const dx = catPosition.x - anchor.x;
-  const dz = catPosition.z - anchor.z;
-  const dist = Math.sqrt(dx * dx + dz * dz);
-  if (dist >= radius) return 0;
-  const t = 1 - dist / radius;
-  const eased = smoothstep(t);
-  return eased;
 }
 
 function wrapLines(ctx, text, maxWidth) {
@@ -54,7 +44,7 @@ function createTextTexture(text, options = {}) {
   const fontWeight = options.fontWeight ?? 600;
   const maxWidth = options.maxWidth ?? 720;
   const padding = options.padding ?? 28;
-  const color = options.color ?? "#1a1a1a";
+  const color = options.color ?? FLOATING_TEXT_COLOR;
 
   const measureCanvas = document.createElement("canvas");
   const measureCtx = measureCanvas.getContext("2d");
@@ -163,10 +153,6 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.position.set(ringCenter.x, 0, ringCenter.z);
   stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = proximityRadius;
-  stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
-  const labelRadius = proximityRadius / 1.8;
-  stop.userData.textProximityRadius =
-    options.textProximityRadius ?? sideOffset + labelRadius * 1.25;
 
   const ring = createPathRing();
   stop.userData.ring = ring;
@@ -196,7 +182,7 @@ function addFloatingPanels(textGroup, panels, sections, phaseSeed) {
     const panel = createTextPanel(section.text, {
       fontSize: section.fontSize ?? 16,
       fontWeight: section.fontWeight ?? 500,
-      color: section.color ?? "#333",
+      color: FLOATING_TEXT_COLOR,
       worldWidth: section.worldWidth ?? 7,
       maxWidth: section.maxWidth ?? 480,
       lineHeight: section.lineHeight ?? 1.35,
@@ -233,7 +219,7 @@ export function createPathFloatingLabels(curve) {
         const panel = createTextPanel(wp.title, {
           fontSize: 30,
           fontWeight: 600,
-          color: "#1a1a1a",
+          color: FLOATING_TEXT_COLOR,
           worldWidth: 6,
           maxWidth: 420,
           y: 4.8,
@@ -246,9 +232,7 @@ export function createPathFloatingLabels(curve) {
         panels.push(panel);
         textGroup.add(panel);
       },
-      wp.id === "resume"
-        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.sideOffset + wp.radius * 1.55 }
-        : {}
+      wp.id === "resume" ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET } : {}
     );
     group.add(stop);
   });
@@ -266,21 +250,20 @@ function faceGroup(group, catPosition) {
   }
 }
 
-function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition) {
+function applyProximity(stop, ringProximity, elapsed, catPosition) {
   stop.userData.ring.material.opacity = ringProximity * 0.65;
   stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
 
   if (stop.userData.underline) {
-    stop.userData.underline.material.opacity = textProximity;
-    stop.userData.underline.scale.x = 0.15 + textProximity * 0.85;
+    stop.userData.underline.material.opacity = ringProximity;
+    stop.userData.underline.scale.x = 0.15 + ringProximity * 0.85;
   }
 
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    panel.material.opacity = textProximity * TEXT_FADE_MAX;
-    panel.material.alphaTest = 0.05;
-    panel.visible = textProximity > 0.01;
+    panel.material.opacity = 1;
+    panel.visible = true;
   });
 
   if (stop.userData.textGroup && catPosition) {
@@ -289,9 +272,7 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
 }
 
 export function animateFloatingText(group, elapsed, catPosition) {
-  if (!catPosition) return 0;
-
-  let maxTextProximity = 0;
+  if (!catPosition) return;
 
   group.children.forEach((stop) => {
     if (!stop.userData.proximityAnchor) return;
@@ -301,15 +282,6 @@ export function animateFloatingText(group, elapsed, catPosition) {
       stop.userData.proximityAnchor,
       stop.userData.proximityRadius
     );
-    const distFade = textFadeAt(
-      catPosition,
-      stop.userData.textAnchor,
-      stop.userData.textProximityRadius
-    );
-    const textProximity = Math.max(distFade, ringProximity * 0.9);
-    maxTextProximity = Math.max(maxTextProximity, textProximity);
-    applyProximity(stop, ringProximity, textProximity, elapsed, catPosition);
+    applyProximity(stop, ringProximity, elapsed, catPosition);
   });
-
-  return maxTextProximity;
 }

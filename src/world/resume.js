@@ -8,7 +8,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 5.2,
     maxWidth: 360,
     y: 14.2,
-    color: "#1a1a1a",
   },
   {
     text: "Rhiannon Black",
@@ -17,7 +16,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 5.5,
     maxWidth: 380,
     y: 12.6,
-    color: "#1a1a1a",
   },
   {
     text: "Creative developer & designer building polished digital experiences from concept to launch.",
@@ -26,7 +24,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 8.2,
     maxWidth: 520,
     y: 10.9,
-    color: "#444",
   },
   {
     text: "Experience",
@@ -35,7 +32,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 4.8,
     maxWidth: 320,
     y: 9.4,
-    color: "#1a1a1a",
   },
   {
     text:
@@ -46,7 +42,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 8.8,
     maxWidth: 540,
     y: 7.4,
-    color: "#555",
     lineHeight: 1.4,
   },
   {
@@ -58,7 +53,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 8.8,
     maxWidth: 540,
     y: 4.9,
-    color: "#555",
     lineHeight: 1.4,
   },
   {
@@ -68,7 +62,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 4.2,
     maxWidth: 280,
     y: 3.2,
-    color: "#1a1a1a",
   },
   {
     text: "JavaScript · Vue · Rust · HTML/CSS · UI/UX · Git · macOS support · Full-stack delivery",
@@ -77,7 +70,6 @@ export const RESUME_FLOAT_SECTIONS = [
     worldWidth: 8.6,
     maxWidth: 520,
     y: 1.6,
-    color: "#555",
   },
 ];
 
