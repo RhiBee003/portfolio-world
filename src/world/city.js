@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { buildingMaterial } from "./materials.js";
 import { PATH_POINTS, START_OVERPASS_T } from "./waypoints.js";
+import { WORLD_CONFIG } from "./worldConfig.js";
+
+const CITY = WORLD_CONFIG.city;
 
 function seededRandom(seed) {
   let s = seed;
@@ -61,14 +64,27 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
   pushCollision(collisions, x, z, w, d, h, rotY);
 }
 
+function shouldSkipProceduralSpot(x, z) {
+  const absX = Math.abs(x);
+  const { overpassFlank, startCorridor, midCorridor, endPlaza, overpassExclusion } = CITY;
+
+  if (z > overpassFlank.zMin && z < overpassFlank.zMax && x < overpassFlank.xMax) return true;
+  if (z > overpassExclusion.zMin && z < overpassExclusion.zMax && absX > overpassExclusion.absXMin && absX < overpassExclusion.absXMax) {
+    return true;
+  }
+  if (z > startCorridor.zMin && absX < startCorridor.absXMax) return true;
+  if (z > midCorridor.zMin && absX < midCorridor.absXMax) return true;
+  if (z < endPlaza.zMax && absX < endPlaza.absXMax) return true;
+
+  return false;
+}
+
 function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
-  const spacing = 14;
-  const inset = 3;
-  const pathClearance = 7;
+  const { perimeterSpacing, perimeterInset, perimeterPathClearance, overpassFlank } = CITY;
 
   function tryPlace(x, z, rotY) {
-    if (distToPath(x, z, curve) < pathClearance) return false;
-    if (z > 14 && z < 22 && x < 10) return false;
+    if (distToPath(x, z, curve) < perimeterPathClearance) return false;
+    if (z > overpassFlank.zMin && z < overpassFlank.zMax && x < overpassFlank.xMax) return false;
     const w = 5 + rand() * 4;
     const d = 5 + rand() * 4;
     const h = 16 + rand() * 12;
@@ -77,14 +93,14 @@ function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
     return true;
   }
 
-  for (let x = bounds.xMin + 5; x <= bounds.xMax - 5; x += spacing) {
-    tryPlace(x, bounds.zMax - inset, 0);
-    tryPlace(x + spacing * 0.5, bounds.zMin + inset, Math.PI);
+  for (let x = bounds.xMin + 5; x <= bounds.xMax - 5; x += perimeterSpacing) {
+    tryPlace(x, bounds.zMax - perimeterInset, 0);
+    tryPlace(x + perimeterSpacing * 0.5, bounds.zMin + perimeterInset, Math.PI);
   }
 
-  for (let z = bounds.zMin + 12; z <= bounds.zMax - 12; z += spacing) {
-    tryPlace(bounds.xMin + inset, z, Math.PI / 2);
-    tryPlace(bounds.xMax - inset, z + spacing * 0.5, -Math.PI / 2);
+  for (let z = bounds.zMin + 12; z <= bounds.zMax - 12; z += perimeterSpacing) {
+    tryPlace(bounds.xMin + perimeterInset, z, Math.PI / 2);
+    tryPlace(bounds.xMax - perimeterInset, z + perimeterSpacing * 0.5, -Math.PI / 2);
   }
 }
 
@@ -108,33 +124,28 @@ export function createCity(curve) {
   const group = new THREE.Group();
   const collisions = [];
   const rand = seededRandom(42);
-
-  const pathClearance = 5.5;
-  const bounds = { xMin: -38, xMax: 38, zMin: -145, zMax: 22 };
-  const targetCount = 42;
-  let placed = 0;
-  let attempts = 0;
+  const bounds = CITY.bounds;
 
   createPerimeterBuildings(group, collisions, curve, bounds, seededRandom(7));
 
-  while (placed < targetCount && attempts < 800) {
+  let placed = 0;
+  let attempts = 0;
+
+  while (placed < CITY.proceduralCount && attempts < CITY.maxPlacementAttempts) {
     attempts += 1;
     const x = bounds.xMin + rand() * (bounds.xMax - bounds.xMin);
     const z = bounds.zMin + rand() * (bounds.zMax - bounds.zMin);
 
-    if (distToPath(x, z, curve) < pathClearance) continue;
-    if (z > 18 && z < 30 && Math.abs(x) > 6 && Math.abs(x) < 30) continue;
-    if (z > 2 && Math.abs(x) < 10) continue;
-    if (z > 10 && Math.abs(x) < 12) continue;
-    if (z < -125 && Math.abs(x) < 22) continue;
+    if (distToPath(x, z, curve) < CITY.pathClearance) continue;
+    if (shouldSkipProceduralSpot(x, z)) continue;
 
     const distEdgeX = Math.min(x - bounds.xMin, bounds.xMax - x);
     const distEdgeZ = Math.min(z - bounds.zMin, bounds.zMax - z);
-    if (distEdgeX < 8 || distEdgeZ < 8) continue;
+    if (distEdgeX < CITY.edgePadding || distEdgeZ < CITY.edgePadding) continue;
 
-    const w = 2.2 + rand() * 3.5;
-    const d = 2.2 + rand() * 3.5;
-    const h = 3 + rand() * 14;
+    const w = 2.2 + rand() * 3.8;
+    const d = 2.2 + rand() * 3.8;
+    const h = 4 + rand() * 16;
     const tone = rand() > 0.55 ? "dark" : rand() > 0.5 ? "mid" : "light";
     const rotY = (rand() - 0.5) * 0.35;
 
