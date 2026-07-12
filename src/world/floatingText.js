@@ -120,6 +120,24 @@ function createPathRing() {
 }
 
 
+function createUnderline(width) {
+  const line = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, 0.1),
+    new THREE.MeshBasicMaterial({
+      color: 0xe8a4bc,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      fog: false,
+      toneMapped: false,
+    })
+  );
+  line.renderOrder = 9;
+  line.frustumCulled = false;
+  return line;
+}
+
 function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, buildText, options = {}) {
   const ringTOffset = options.ringTOffset ?? RING_T_OFFSET;
   const ringT = THREE.MathUtils.clamp(triggerT + ringTOffset, 0.02, 0.98);
@@ -141,6 +159,14 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.userData.panels = [];
 
   buildText(textGroup, stop.userData.panels);
+
+  if (stop.userData.panels.length > 0) {
+    const baseY = stop.userData.panels[0].userData.baseY;
+    const underline = createUnderline(4.2);
+    underline.position.y = baseY - 0.55;
+    stop.userData.underline = underline;
+    textGroup.add(underline);
+  }
 
   stop.add(textGroup);
   return stop;
@@ -193,8 +219,13 @@ function faceGroup(group, catPosition) {
 }
 
 function applyProximity(stop, proximity, elapsed, catPosition) {
-  stop.userData.ring.material.opacity = proximity * 0.55;
-  stop.userData.ring.scale.set(0.85 + proximity * 0.2, 0.85 + proximity * 0.2, 1);
+  stop.userData.ring.material.opacity = proximity * 0.65;
+  stop.userData.ring.scale.set(0.85 + proximity * 0.25, 0.85 + proximity * 0.25, 1);
+
+  if (stop.userData.underline) {
+    stop.userData.underline.material.opacity = proximity;
+    stop.userData.underline.scale.x = 0.15 + proximity * 0.85;
+  }
 
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift } = panel.userData;
