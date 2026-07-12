@@ -152,13 +152,15 @@ function createUnderline(width) {
   return line;
 }
 
-function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, buildText) {
-  const trigger = pathCenterAt(curve, triggerT);
+function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, buildText, options = {}) {
+  const ringTOffset = options.ringTOffset ?? -0.045;
+  const ringT = THREE.MathUtils.clamp(triggerT + ringTOffset, 0.02, 0.98);
+  const ringCenter = pathCenterAt(curve, ringT);
   const sidePos = pathSideAt(curve, triggerT, side, sideOffset);
 
   const stop = new THREE.Group();
-  stop.position.set(trigger.x, 0, trigger.z);
-  stop.userData.proximityAnchor = trigger;
+  stop.position.set(ringCenter.x, 0, ringCenter.z);
+  stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = proximityRadius;
 
   const ring = createPathRing();
@@ -166,7 +168,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.add(ring);
 
   const textGroup = new THREE.Group();
-  textGroup.position.set(sidePos.x - trigger.x, 0, sidePos.z - trigger.z);
+  textGroup.position.set(sidePos.x - ringCenter.x, 0, sidePos.z - ringCenter.z);
   stop.userData.textGroup = textGroup;
   stop.userData.panels = [];
 
@@ -181,11 +183,11 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
 
 function createSkyName(curve) {
   const cityCenter = curve.getPointAt(0.38);
-  const trigger = pathCenterAt(curve, 0.38);
+  const ringCenter = pathCenterAt(curve, 0.34);
 
   const stop = new THREE.Group();
-  stop.position.set(trigger.x, 0, trigger.z);
-  stop.userData.proximityAnchor = trigger;
+  stop.position.set(ringCenter.x, 0, ringCenter.z);
+  stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = 24;
   stop.userData.isSkyStop = true;
 
@@ -203,7 +205,7 @@ function createSkyName(curve) {
     freq: 0.45,
     drift: 0.14,
   });
-  name.position.set(cityCenter.x - trigger.x, 22, cityCenter.z - trigger.z);
+  name.position.set(cityCenter.x - ringCenter.x, 22, cityCenter.z - ringCenter.z);
   name.userData.baseY = 22;
 
   const textGroup = new THREE.Group();
@@ -220,7 +222,7 @@ const FLOATING_LABELS = [
     text: "Creative developer and designer. Walk the trail to explore projects and ways to connect.",
     pathT: 0.11,
     side: -1,
-    offset: 7,
+    offset: 9.5,
     y: 5.2,
     fontSize: 30,
     fontWeight: 500,

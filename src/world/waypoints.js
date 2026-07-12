@@ -10,7 +10,7 @@ export const WAYPOINTS = [
     links: [{ label: "Classic portfolio", href: "https://rhibee003.github.io" }],
     pathT: 0.06,
     side: 1,
-    sideOffset: 6,
+    sideOffset: 8,
     radius: 7,
   },
   {
@@ -24,7 +24,7 @@ export const WAYPOINTS = [
     ],
     pathT: 0.24,
     side: -1,
-    sideOffset: 6.5,
+    sideOffset: 8.5,
     radius: 6,
   },
   {
@@ -38,7 +38,7 @@ export const WAYPOINTS = [
     ],
     pathT: 0.44,
     side: 1,
-    sideOffset: 6.5,
+    sideOffset: 8.5,
     radius: 6,
   },
   {
@@ -52,7 +52,7 @@ export const WAYPOINTS = [
     ],
     pathT: 0.64,
     side: -1,
-    sideOffset: 6.5,
+    sideOffset: 8.5,
     radius: 6,
   },
   {
@@ -63,7 +63,7 @@ export const WAYPOINTS = [
     links: [{ label: "Email me", href: "mailto:rhiblack0017@gmail.com" }],
     pathT: 0.84,
     side: 1,
-    sideOffset: 6.5,
+    sideOffset: 8.5,
     radius: 6,
   },
 ];
