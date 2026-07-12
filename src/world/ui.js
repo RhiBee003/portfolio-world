@@ -80,9 +80,6 @@ export function createInput(canvas, options = {}) {
   };
 
   const sensitivity = 0.0024;
-  let dragLook = false;
-  let lastDragX = 0;
-  let lastDragY = 0;
   let lockRequested = false;
 
   function isPanelOpen() {
@@ -95,7 +92,6 @@ export function createInput(canvas, options = {}) {
 
     if (mode === "free") {
       lockRequested = false;
-      dragLook = false;
       releaseLock();
     }
   }
@@ -113,7 +109,6 @@ export function createInput(canvas, options = {}) {
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
-    dragLook = false;
   }
 
   function requestLock() {
@@ -126,27 +121,19 @@ export function createInput(canvas, options = {}) {
 
   function enterLookMode() {
     if (isPanelOpen()) return;
-    setCursorMode("look");
-    options.onEngageView?.();
+    if (state.pointerLocked) return;
     requestLock();
   }
 
   function enterFreeMode() {
     setCursorMode("free");
+    options.onReleaseView?.();
   }
 
-  canvas.addEventListener("mousedown", (e) => {
+  canvas.addEventListener("click", (e) => {
     if (e.button !== 0 || e.target.closest(".zone-panel")) return;
     if (isPanelOpen()) return;
-
-    dragLook = true;
-    lastDragX = e.clientX;
-    lastDragY = e.clientY;
     enterLookMode();
-  });
-
-  window.addEventListener("mouseup", () => {
-    dragLook = false;
   });
 
   document.addEventListener("pointerlockchange", () => {
@@ -154,42 +141,34 @@ export function createInput(canvas, options = {}) {
 
     if (state.pointerLocked) {
       lockRequested = false;
-      dragLook = false;
       state.cursorMode = "look";
       document.body.dataset.cursorMode = "look";
+      options.onEngageView?.();
       return;
     }
 
     state.pointerLocked = false;
     lockRequested = false;
-    dragLook = false;
 
     if (!isPanelOpen()) {
       state.cursorMode = "free";
       document.body.dataset.cursorMode = "free";
+      options.onReleaseView?.();
     }
   });
 
   document.addEventListener("pointerlockerror", () => {
     state.pointerLocked = false;
     lockRequested = false;
-    dragLook = false;
     state.cursorMode = "free";
     document.body.dataset.cursorMode = "free";
+    options.onReleaseView?.();
   });
 
   document.addEventListener("mousemove", (e) => {
-    if (state.pointerLocked) {
-      state.lookX += e.movementX * sensitivity;
-      state.lookY += e.movementY * sensitivity;
-      return;
-    }
-
-    if (!dragLook || isPanelOpen()) return;
-    state.lookX += (e.clientX - lastDragX) * sensitivity;
-    state.lookY += (e.clientY - lastDragY) * sensitivity;
-    lastDragX = e.clientX;
-    lastDragY = e.clientY;
+    if (!state.pointerLocked) return;
+    state.lookX += e.movementX * sensitivity;
+    state.lookY += e.movementY * sensitivity;
   });
 
   window.addEventListener("keydown", (e) => {

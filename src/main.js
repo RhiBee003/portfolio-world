@@ -70,7 +70,6 @@ cat.facing = Math.atan2(pathStartTangent.x, pathStartTangent.z);
 cat.cat.rotation.y = cat.facing;
 
 let fpBlend = 0;
-let idleTimer = 0;
 let lastZone = null;
 let viewYaw = cat.facing;
 let viewPitch = -0.06;
@@ -79,15 +78,11 @@ let input;
 let zoneUI;
 
 zoneUI = createZoneUI({
-  onShow: () => input.enterFreeMode(),
+  onShow: () => input?.enterFreeMode(),
 });
 
 input = createInput(canvas, {
   isPanelOpen: () => zoneUI.isOpen(),
-  onEngageView() {
-    idleTimer = 0;
-    fpBlend = 1;
-  },
 });
 
 const orbitDistance = 10.5;
@@ -138,19 +133,10 @@ function updateViewAngles(dt) {
   return hadLook;
 }
 
-function updateCameraBlend(dt, wantsMove, hadLook) {
-  const active = wantsMove || hadLook;
-
-  if (active) {
-    idleTimer = 0;
-    const urgency = wantsMove ? 1.35 : 0.9;
-    fpBlend = THREE.MathUtils.lerp(fpBlend, 1, 1 - Math.exp(-urgency * dt));
-  } else {
-    idleTimer += dt;
-    if (idleTimer > 2.2) {
-      fpBlend = THREE.MathUtils.lerp(fpBlend, 0, 1 - Math.exp(-1.1 * dt));
-    }
-  }
+function updateCameraBlend(dt) {
+  const wantFirstPerson = input.pointerLocked && !zoneUI.isOpen();
+  const target = wantFirstPerson ? 1 : 0;
+  fpBlend = THREE.MathUtils.lerp(fpBlend, target, 1 - Math.exp(-6 * dt));
 }
 
 function getOverviewPosition(target) {
@@ -234,9 +220,8 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.05);
 
-  const hadLook = updateViewAngles(dt);
-  const wantsMove = input.forward || input.back || input.left || input.right;
-  updateCameraBlend(dt, wantsMove, hadLook);
+  updateViewAngles(dt);
+  updateCameraBlend(dt);
 
   const easedBlend = smoothstep(fpBlend);
   if (easedBlend > 0.08) {
