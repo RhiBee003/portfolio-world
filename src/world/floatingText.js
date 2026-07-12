@@ -3,8 +3,8 @@ import { pathSideAt, pathCenterAt } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { RESUME_FLOAT_SECTIONS } from "./resume.js";
 
-const FONT =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
+const TEXT_FADE_MIN = 0.1;
+const TEXT_FADE_MAX = 1;
 
 function smoothstep(t) {
   const x = THREE.MathUtils.clamp(t, 0, 1);
@@ -87,7 +87,7 @@ function createTextPanel(text, options = {}) {
     new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: 1,
+      opacity: TEXT_FADE_MIN,
       alphaTest: 0.08,
       depthWrite: false,
       depthTest: false,
@@ -261,7 +261,8 @@ function applyProximity(stop, proximity, elapsed, catPosition) {
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    panel.material.opacity = 1;
+    panel.material.opacity =
+      TEXT_FADE_MIN + proximity * (TEXT_FADE_MAX - TEXT_FADE_MIN);
   });
 
   if (stop.userData.textGroup && catPosition) {
