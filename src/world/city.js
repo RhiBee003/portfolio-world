@@ -106,7 +106,7 @@ export function createCity(curve) {
     const z = bounds.zMin + rand() * (bounds.zMax - bounds.zMin);
 
     if (distToPath(x, z, curve) < pathClearance) continue;
-    if (z > 18 && z < 30 && x > 8 && x < 24) continue;
+    if (z > 18 && z < 30 && x > 6 && x < 30) continue;
     if (z > 2 && Math.abs(x) < 10) continue;
     if (z > 10 && Math.abs(x) < 12) continue;
     if (z < -125 && Math.abs(x) < 22) continue;

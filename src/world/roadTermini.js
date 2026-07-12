@@ -99,7 +99,9 @@ function createStartOverpass(curve, group, collisions) {
   addBox(group, collisions, barrierX, 1.1, barrierZ, spanW - 4, 2.2, 0.5, yaw, dark);
 
   function addConnectedWing(side) {
-    const sign = side === "right" ? 1 : -1;
+    if (side === "right") return;
+
+    const sign = -1;
     const pillarOuter = 5.5 + 0.7;
     const wingW = 4.2;
     const wingD = spanD + 0.45;
@@ -125,41 +127,68 @@ function createStartOverpass(curve, group, collisions) {
     );
   }
 
+  function addRightAbutment() {
+    const pillarOuter = 5.5 + 0.7;
+    const innerX = cx + normal.x * pillarOuter;
+    const baseW = 8.4;
+    const baseCenterX = innerX + normal.x * (baseW / 2);
+    const baseD = spanD + 1.4;
+    const baseH = deckY + deckH * 0.55;
+
+    addBox(group, collisions, baseCenterX, 0, cz, baseW, baseH, baseD, yaw, buildingMaterial("light"));
+
+    addBox(
+      group,
+      [],
+      baseCenterX,
+      deckY - deckH * 0.05,
+      cz,
+      baseW * 0.98,
+      deckH * 1.55,
+      baseD * 0.96,
+      yaw,
+      concrete,
+      false
+    );
+
+    const towerW = 5.2;
+    const towerCenterX = baseCenterX + normal.x * (baseW / 2 + towerW / 2 - 0.15);
+    const towerH = deckY + 3.1;
+    addBox(group, collisions, towerCenterX, 0, cz, towerW, towerH, baseD, yaw, buildingMaterial("mid"));
+
+    addBox(
+      group,
+      [],
+      towerCenterX,
+      deckY + deckH * 0.35,
+      cz,
+      towerW * 0.94,
+      deckH * 1.25,
+      baseD * 0.92,
+      yaw,
+      buildingMaterial("dark"),
+      false
+    );
+
+    const bridgeW = 2.2;
+    const bridgeCenterX = innerX + normal.x * (bridgeW / 2 - 0.05);
+    addBox(
+      group,
+      [],
+      bridgeCenterX,
+      deckY * 0.58,
+      cz,
+      bridgeW,
+      deckY * 0.92,
+      baseD * 0.82,
+      yaw,
+      buildingMaterial("dark"),
+      false
+    );
+  }
+
   addConnectedWing("left");
-  addConnectedWing("right");
-
-  const rightPillarOuter = 5.5 + 0.7;
-  const rightWingW = 4.2;
-  const rightBuildingX = cx + normal.x * (rightPillarOuter + rightWingW + 2.4);
-  const rightBuildingZ = cz - tangent.z * 0.8;
-  addBox(
-    group,
-    collisions,
-    rightBuildingX,
-    0,
-    rightBuildingZ,
-    5,
-    deckY + 2.4,
-    spanD + 1.2,
-    yaw,
-    buildingMaterial("mid")
-  );
-
-  const connectorX = cx + normal.x * (rightPillarOuter + rightWingW * 0.82);
-  const connectorZ = cz - tangent.z * 0.35;
-  addBox(
-    group,
-    [],
-    connectorX,
-    deckY * 0.52,
-    connectorZ,
-    2.6,
-    deckY * 0.95,
-    spanD * 0.75,
-    yaw,
-    buildingMaterial("dark"),
-    false
-  );
+  addRightAbutment();
 
   const tunnelLight = new THREE.Mesh(
     new THREE.PlaneGeometry(spanW - 3, 2.8),
