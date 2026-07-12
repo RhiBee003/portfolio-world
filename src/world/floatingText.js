@@ -5,7 +5,6 @@ import { RESUME_FLOAT_SECTIONS } from "./resume.js";
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
-const TEXT_FADE_MIN = 0.1;
 const TEXT_FADE_MAX = 1;
 
 function smoothstep(t) {
@@ -18,6 +17,16 @@ function proximityAt(catPosition, anchor, radius) {
   const dz = catPosition.z - anchor.z;
   const dist = Math.sqrt(dx * dx + dz * dz);
   return smoothstep(1 - dist / radius);
+}
+
+function textFadeAt(catPosition, anchor, radius) {
+  const dx = catPosition.x - anchor.x;
+  const dz = catPosition.z - anchor.z;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  if (dist >= radius) return 0;
+  const t = 1 - dist / radius;
+  const eased = smoothstep(t);
+  return eased * eased;
 }
 
 function wrapLines(ctx, text, maxWidth) {
@@ -89,7 +98,7 @@ function createTextPanel(text, options = {}) {
     new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: TEXT_FADE_MIN,
+      opacity: 0,
       alphaTest: 0.08,
       depthWrite: false,
       depthTest: false,
@@ -154,6 +163,9 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.position.set(ringCenter.x, 0, ringCenter.z);
   stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = proximityRadius;
+  stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
+  stop.userData.textProximityRadius =
+    options.textProximityRadius ?? Math.max(proximityRadius * 0.58, 4.5);
 
   const ring = createPathRing();
   stop.userData.ring = ring;
@@ -233,7 +245,9 @@ export function createPathFloatingLabels(curve) {
         panels.push(panel);
         textGroup.add(panel);
       },
-      wp.id === "resume" ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET } : {}
+      wp.id === "resume"
+        ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.radius * 1.15 }
+        : { textProximityRadius: wp.radius * 0.92 }
     );
     group.add(stop);
   });
@@ -251,20 +265,21 @@ function faceGroup(group, catPosition) {
   }
 }
 
-function applyProximity(stop, proximity, elapsed, catPosition) {
-  stop.userData.ring.material.opacity = proximity * 0.65;
-  stop.userData.ring.scale.set(0.85 + proximity * 0.25, 0.85 + proximity * 0.25, 1);
+function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition) {
+  stop.userData.ring.material.opacity = ringProximity * 0.65;
+  stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
 
   if (stop.userData.underline) {
-    stop.userData.underline.material.opacity = proximity;
-    stop.userData.underline.scale.x = 0.15 + proximity * 0.85;
+    stop.userData.underline.material.opacity = textProximity;
+    stop.userData.underline.scale.x = 0.15 + textProximity * 0.85;
   }
 
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    panel.material.opacity =
-      TEXT_FADE_MIN + proximity * (TEXT_FADE_MAX - TEXT_FADE_MIN);
+    panel.material.opacity = textProximity * TEXT_FADE_MAX;
+    panel.material.alphaTest = textProximity < 0.2 ? 0.35 : 0.08;
+    panel.visible = textProximity > 0.02;
   });
 
   if (stop.userData.textGroup && catPosition) {
@@ -278,11 +293,16 @@ export function animateFloatingText(group, elapsed, catPosition) {
   group.children.forEach((stop) => {
     if (!stop.userData.proximityAnchor) return;
 
-    const proximity = proximityAt(
+    const ringProximity = proximityAt(
       catPosition,
       stop.userData.proximityAnchor,
       stop.userData.proximityRadius
     );
-    applyProximity(stop, proximity, elapsed, catPosition);
+    const textProximity = textFadeAt(
+      catPosition,
+      stop.userData.textAnchor,
+      stop.userData.textProximityRadius
+    );
+    applyProximity(stop, ringProximity, textProximity, elapsed, catPosition);
   });
 }
