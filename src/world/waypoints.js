@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { pathCenterAt } from "./pathLayout.js";
 
+export const RING_T_OFFSET = -0.045;
+export const RING_ZONE_RADIUS = 3.1;
+
 export const WAYPOINTS = [
   {
     id: "hero",
@@ -68,8 +71,17 @@ export const WAYPOINTS = [
   },
 ];
 
+export function getWaypointRingPosition(wp, curve) {
+  const ringT = THREE.MathUtils.clamp(wp.pathT + RING_T_OFFSET, 0.02, 0.98);
+  return pathCenterAt(curve, ringT);
+}
+
+export function getWaypointRingRadius() {
+  return RING_ZONE_RADIUS;
+}
+
 export function getWaypointTriggerPosition(wp, curve) {
-  return pathCenterAt(curve, wp.pathT);
+  return getWaypointRingPosition(wp, curve);
 }
 
 export function getWaypointSidePosition(wp, curve) {

@@ -4,7 +4,7 @@ import { createPath } from "./world/path.js";
 import { createCity, createGround, createPathCurve, checkCollision } from "./world/city.js";
 import { createRoadTermini, animateFountain } from "./world/roadTermini.js";
 import { createCat, CatController } from "./world/cat.js";
-import { WAYPOINTS, getWaypointTriggerPosition } from "./world/waypoints.js";
+import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius } from "./world/waypoints.js";
 import { createZoneUI, createInput } from "./world/ui.js";
 import { createPathFloatingLabels, animateFloatingText } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
@@ -95,11 +95,14 @@ const cameraScratch = new THREE.Vector3();
 
 function checkZones() {
   let found = null;
+  const zoneRadius = getWaypointRingRadius();
+  const zoneRadiusSq = zoneRadius * zoneRadius;
+
   for (const wp of WAYPOINTS) {
-    const trigger = getWaypointTriggerPosition(wp, curve);
+    const trigger = getWaypointRingPosition(wp, curve);
     const dx = cat.position.x - trigger.x;
     const dz = cat.position.z - trigger.z;
-    if (dx * dx + dz * dz < wp.radius * wp.radius) {
+    if (dx * dx + dz * dz < zoneRadiusSq) {
       found = wp;
       break;
     }
@@ -255,11 +258,6 @@ requestAnimationFrame(() => {
   loading.classList.add("is-done");
   animate();
 });
-
-setTimeout(() => {
-  zoneUI.show(WAYPOINTS[0]);
-  lastZone = WAYPOINTS[0].id;
-}, 1200);
 
 function lerpAngle(a, b, t) {
   let diff = b - a;

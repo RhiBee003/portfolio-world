@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { pathSideAt, pathCenterAt } from "./pathLayout.js";
-import { WAYPOINTS } from "./waypoints.js";
+import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
@@ -153,7 +153,7 @@ function createUnderline(width) {
 }
 
 function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, buildText, options = {}) {
-  const ringTOffset = options.ringTOffset ?? -0.045;
+  const ringTOffset = options.ringTOffset ?? RING_T_OFFSET;
   const ringT = THREE.MathUtils.clamp(triggerT + ringTOffset, 0.02, 0.98);
   const ringCenter = pathCenterAt(curve, ringT);
   const sidePos = pathSideAt(curve, triggerT, side, sideOffset);
@@ -183,7 +183,8 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
 
 function createSkyName(curve) {
   const cityCenter = curve.getPointAt(0.38);
-  const ringCenter = pathCenterAt(curve, 0.34);
+  const ringT = THREE.MathUtils.clamp(0.38 + RING_T_OFFSET, 0.02, 0.98);
+  const ringCenter = pathCenterAt(curve, ringT);
 
   const stop = new THREE.Group();
   stop.position.set(ringCenter.x, 0, ringCenter.z);
@@ -263,8 +264,6 @@ export function createPathFloatingLabels(curve) {
   });
 
   WAYPOINTS.forEach((wp, index) => {
-    if (wp.id === "hero") return;
-
     const stop = createLabelStop(
       curve,
       wp.pathT,
@@ -272,6 +271,8 @@ export function createPathFloatingLabels(curve) {
       wp.sideOffset,
       wp.radius * 1.8,
       (textGroup, panels, accents) => {
+        if (wp.id === "hero") return;
+
         accents.backdrop = createTextBackdrop(8.5, 5.5);
         accents.backdrop.position.y = 5;
         textGroup.add(accents.backdrop);
