@@ -27,7 +27,8 @@ export function createZoneUI(options = {}) {
         const a = document.createElement("a");
         a.href = link.href;
         a.textContent = link.label;
-        a.target = link.href.startsWith("http") ? "_blank" : "_self";
+        const isPdf = link.href.toLowerCase().includes(".pdf");
+        a.target = link.href.startsWith("http") || isPdf ? "_blank" : "_self";
         a.rel = "noopener noreferrer";
         links.appendChild(a);
       });

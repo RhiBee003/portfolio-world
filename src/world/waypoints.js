@@ -10,7 +10,10 @@ export const WAYPOINTS = [
     tag: "Start",
     title: "Rhiannon Black",
     body: "Creative developer and designer. Follow the trail to explore projects.",
-    links: [{ label: "Classic portfolio", href: "https://rhibee003.github.io" }],
+    links: [
+      { label: "Classic portfolio", href: "https://rhibee003.github.io" },
+      { label: "Resume", href: "/portfolio-world/resume.pdf" },
+    ],
     pathT: 0.06,
     side: 1,
     sideOffset: 8,
@@ -52,6 +55,7 @@ export const WAYPOINTS = [
     links: [
       { label: "LinkedIn", href: "https://www.linkedin.com/feed/" },
       { label: "GitHub", href: "https://github.com/RhiBee003" },
+      { label: "Resume", href: "/portfolio-world/resume.pdf" },
     ],
     pathT: 0.64,
     side: -1,
@@ -63,7 +67,10 @@ export const WAYPOINTS = [
     tag: "Contact",
     title: "Let's connect",
     body: "Interested in collaborating? Reach out anytime.",
-    links: [{ label: "Email me", href: "mailto:rhiblack0017@gmail.com" }],
+    links: [
+      { label: "Email me", href: "mailto:rhiblack0017@gmail.com" },
+      { label: "Resume", href: "/portfolio-world/resume.pdf" },
+    ],
     pathT: 0.84,
     side: 1,
     sideOffset: 8.5,
