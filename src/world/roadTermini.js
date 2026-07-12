@@ -98,10 +98,7 @@ function createStartOverpass(curve, group, collisions) {
   const barrierZ = cz - tangent.z * 3.6;
   addBox(group, collisions, barrierX, 1.1, barrierZ, spanW - 4, 2.2, 0.5, yaw, dark);
 
-  function addConnectedWing(side) {
-    if (side === "right") return;
-
-    const sign = -1;
+  function addConnectedWing(sign) {
     const pillarOuter = 5.5 + 0.7;
     const wingW = 4.2;
     const wingD = spanD + 0.45;
@@ -127,20 +124,21 @@ function createStartOverpass(curve, group, collisions) {
     );
   }
 
-  function addRightAbutment() {
+  // Path-side abutment: -X reads as the right flank when facing the overpass from the trail.
+  function addPathSideAbutment(sign) {
     const pillarOuter = 5.5 + 0.7;
-    const innerX = cx + normal.x * pillarOuter;
+    const inner = cx + normal.x * (sign * pillarOuter);
     const baseW = 8.4;
-    const baseCenterX = innerX + normal.x * (baseW / 2);
+    const baseCenter = inner + normal.x * (sign * (baseW / 2));
     const baseD = spanD + 1.4;
     const baseH = deckY + deckH * 0.55;
 
-    addBox(group, collisions, baseCenterX, 0, cz, baseW, baseH, baseD, yaw, buildingMaterial("light"));
+    addBox(group, collisions, baseCenter, 0, cz, baseW, baseH, baseD, yaw, buildingMaterial("light"));
 
     addBox(
       group,
       [],
-      baseCenterX,
+      baseCenter,
       deckY - deckH * 0.05,
       cz,
       baseW * 0.98,
@@ -152,14 +150,14 @@ function createStartOverpass(curve, group, collisions) {
     );
 
     const towerW = 5.2;
-    const towerCenterX = baseCenterX + normal.x * (baseW / 2 + towerW / 2 - 0.15);
+    const towerCenter = baseCenter + normal.x * (sign * (baseW / 2 + towerW / 2 - 0.15));
     const towerH = deckY + 3.1;
-    addBox(group, collisions, towerCenterX, 0, cz, towerW, towerH, baseD, yaw, buildingMaterial("mid"));
+    addBox(group, collisions, towerCenter, 0, cz, towerW, towerH, baseD, yaw, buildingMaterial("mid"));
 
     addBox(
       group,
       [],
-      towerCenterX,
+      towerCenter,
       deckY + deckH * 0.35,
       cz,
       towerW * 0.94,
@@ -171,11 +169,11 @@ function createStartOverpass(curve, group, collisions) {
     );
 
     const bridgeW = 2.2;
-    const bridgeCenterX = innerX + normal.x * (bridgeW / 2 - 0.05);
+    const bridgeCenter = inner + normal.x * (sign * (bridgeW / 2 - 0.05));
     addBox(
       group,
       [],
-      bridgeCenterX,
+      bridgeCenter,
       deckY * 0.58,
       cz,
       bridgeW,
@@ -187,8 +185,8 @@ function createStartOverpass(curve, group, collisions) {
     );
   }
 
-  addConnectedWing("left");
-  addRightAbutment();
+  addPathSideAbutment(-1);
+  addConnectedWing(1);
 
   const tunnelLight = new THREE.Mesh(
     new THREE.PlaneGeometry(spanW - 3, 2.8),
