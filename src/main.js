@@ -70,14 +70,20 @@ cat.position.set(
 cat.facing = Math.atan2(pathStartTangent.x, pathStartTangent.z);
 cat.cat.rotation.y = cat.facing;
 
-const input = createInput(canvas);
-const zoneUI = createZoneUI();
-
 let fpBlend = 0;
 let idleTimer = 0;
 let lastZone = null;
 let viewYaw = cat.facing;
 let viewPitch = -0.06;
+
+const input = createInput(canvas, {
+  onEngageView() {
+    idleTimer = 0;
+    fpBlend = 1;
+  },
+});
+const zoneUI = createZoneUI();
+
 const orbitDistance = 10.5;
 const orbitHeight = 4.8;
 
@@ -173,13 +179,9 @@ function applyCamera() {
   }
 
   if (hudHint) {
-    const panel = document.getElementById("zone-panel");
-    const panelOpen = panel && !panel.hidden;
     const lockHint = input.pointerLocked
       ? " · <kbd>Esc</kbd> free cursor"
-      : panelOpen
-        ? ""
-        : " · click to look";
+      : " · click to look";
     hudHint.innerHTML = firstPerson
       ? `<kbd>Mouse</kbd> look · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump${lockHint}`
       : `<kbd>Mouse</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to explore · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump${lockHint}`;

@@ -50,7 +50,7 @@ export function createZoneUI() {
   };
 }
 
-export function createInput(canvas) {
+export function createInput(canvas, options = {}) {
   const keys = new Set();
   const state = {
     forward: false,
@@ -65,6 +65,9 @@ export function createInput(canvas) {
   };
 
   const sensitivity = 0.0024;
+  let dragLook = false;
+  let lastDragX = 0;
+  let lastDragY = 0;
 
   function updateState() {
     state.forward = keys.has("w") || keys.has("arrowup");
@@ -78,29 +81,58 @@ export function createInput(canvas) {
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
+    dragLook = false;
   }
 
   function requestLock() {
-    const panel = document.getElementById("zone-panel");
-    if (panel && !panel.hidden) return;
     if (document.pointerLockElement !== canvas) {
       canvas.requestPointerLock();
     }
   }
 
-  canvas.addEventListener("click", (e) => {
-    if (e.target.closest(".zone-panel")) return;
+  function engageView(e) {
+    if (e?.target?.closest?.(".zone-panel")) return;
+    options.onEngageView?.();
     requestLock();
+  }
+
+  canvas.addEventListener("mousedown", (e) => {
+    if (e.button !== 0 || e.target.closest(".zone-panel")) return;
+    dragLook = !state.pointerLocked;
+    lastDragX = e.clientX;
+    lastDragY = e.clientY;
+    engageView(e);
+  });
+
+  canvas.addEventListener("click", engageView);
+
+  window.addEventListener("mouseup", () => {
+    dragLook = false;
   });
 
   document.addEventListener("pointerlockchange", () => {
     state.pointerLocked = document.pointerLockElement === canvas;
+    if (state.pointerLocked) {
+      dragLook = false;
+    }
+  });
+
+  document.addEventListener("pointerlockerror", () => {
+    state.pointerLocked = false;
   });
 
   document.addEventListener("mousemove", (e) => {
-    if (!state.pointerLocked) return;
-    state.lookX += e.movementX * sensitivity;
-    state.lookY += e.movementY * sensitivity;
+    if (state.pointerLocked) {
+      state.lookX += e.movementX * sensitivity;
+      state.lookY += e.movementY * sensitivity;
+      return;
+    }
+
+    if (!dragLook) return;
+    state.lookX += (e.clientX - lastDragX) * sensitivity;
+    state.lookY += (e.clientY - lastDragY) * sensitivity;
+    lastDragX = e.clientX;
+    lastDragY = e.clientY;
   });
 
   window.addEventListener("keydown", (e) => {
