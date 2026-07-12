@@ -15,20 +15,27 @@ function createArrowShape() {
 
 const arrowGeo = new THREE.ShapeGeometry(createArrowShape());
 
+const ARROW_DIM = new THREE.Color(0x6a1f42);
+const ARROW_BRIGHT = new THREE.Color(0xad3568);
+const _arrowColor = new THREE.Color();
+
+function createArrowMaterial() {
+  return new THREE.MeshBasicMaterial({
+    color: ARROW_DIM.clone(),
+    transparent: true,
+    opacity: 0.82,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    fog: false,
+    toneMapped: false,
+  });
+}
+
 export function createPathArrows(curve) {
   const group = new THREE.Group();
-  const step = 4.6;
+  const step = 4.2;
   const length = curve.getLength();
   const count = Math.floor(length / step);
-
-  const pink = new THREE.MeshStandardMaterial({
-    color: 0xf8a8c4,
-    emissive: 0xffc0d8,
-    emissiveIntensity: 0.32,
-    roughness: 0.55,
-    metalness: 0,
-    side: THREE.DoubleSide,
-  });
 
   for (let i = 1; i < count; i += 1) {
     const t = i / count;
@@ -36,13 +43,14 @@ export function createPathArrows(curve) {
     const tangent = curve.getTangentAt(t).normalize();
     const yaw = Math.atan2(tangent.x, tangent.z);
 
-    const arrow = new THREE.Mesh(arrowGeo, pink);
+    const arrow = new THREE.Mesh(arrowGeo, createArrowMaterial());
     arrow.rotation.order = "YXZ";
     arrow.rotation.set(-Math.PI / 2, yaw + Math.PI, 0);
-    arrow.position.set(center.x, 0.05, center.z);
-    arrow.scale.set(1.2, 1.2, 1);
-    arrow.receiveShadow = true;
+    arrow.position.set(center.x, 0.09, center.z);
+    arrow.scale.set(1.55, 1.55, 1);
+    arrow.renderOrder = 2;
     arrow.frustumCulled = false;
+    arrow.userData.phase = i * 0.62;
 
     group.add(arrow);
   }
@@ -50,6 +58,15 @@ export function createPathArrows(curve) {
   return group;
 }
 
-export function animatePathArrows() {
-  // Static arrows — no pulse animation.
+export function animatePathArrows(group, elapsed) {
+  if (!group) return;
+
+  group.children.forEach((arrow) => {
+    const phase = arrow.userData.phase ?? 0;
+    const wave = 0.5 + 0.5 * Math.sin(elapsed * 2.35 + phase);
+    const mat = arrow.material;
+    _arrowColor.copy(ARROW_DIM).lerp(ARROW_BRIGHT, wave);
+    mat.color.copy(_arrowColor);
+    mat.opacity = 0.58 + wave * 0.42;
+  });
 }
