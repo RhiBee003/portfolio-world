@@ -483,9 +483,6 @@ export function createPathFloatingLabels(curve) {
         if (wp.id === "hero") return;
 
         if (wp.id === "resume") {
-          const pageBack = createResumePageBackground(index * 0.8);
-          textGroup.add(pageBack);
-          stop.userData.pageBack = pageBack;
           addFloatingPanels(textGroup, panels, RESUME_FLOAT_SECTIONS, index * 0.8);
           return;
         }
@@ -510,6 +507,12 @@ export function createPathFloatingLabels(curve) {
         ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.sideOffset + wp.radius * 1.55 }
         : {}
     );
+
+    if (wp.id === "resume") {
+      const pageBack = createResumePageBackground(index * 0.8);
+      stop.userData.textGroup.add(pageBack);
+      stop.userData.pageBack = pageBack;
+    }
 
     const previewConfig = PROJECT_PREVIEWS[wp.id];
     if (previewConfig) {
