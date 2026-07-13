@@ -3,10 +3,23 @@ export function createBioBar() {
   const collapseBtn = document.getElementById("bio-collapse");
   if (!bar || !collapseBtn) return;
 
+  const DOCK_BOTTOM = 20;
+  const DESCEND_MS = 1150;
+
+  function dockAtBottom() {
+    bar.style.top = "auto";
+    bar.style.bottom = `${DOCK_BOTTOM}px`;
+    bar.style.transform = "translateX(-50%)";
+    bar.classList.add("is-docked", "can-resize");
+  }
+
   function setCollapsed(collapsed) {
     bar.classList.toggle("is-collapsed", collapsed);
     collapseBtn.textContent = collapsed ? "+" : "−";
     collapseBtn.setAttribute("aria-label", collapsed ? "Expand bio" : "Collapse bio");
+    if (!collapsed) {
+      dockAtBottom();
+    }
   }
 
   collapseBtn.addEventListener("click", (e) => {
@@ -18,16 +31,39 @@ export function createBioBar() {
   bar.addEventListener("mousedown", (e) => e.stopPropagation());
   bar.addEventListener("click", (e) => e.stopPropagation());
 
-  bar.addEventListener("animationend", () => {
-    bar.classList.remove("is-descending");
-    bar.classList.add("is-docked", "can-resize");
+  function playDescent() {
+    bar.classList.remove("is-collapsed", "is-docked", "can-resize");
+    bar.style.bottom = "auto";
+    bar.style.top = "0px";
     bar.style.transform = "translateX(-50%)";
+
+    requestAnimationFrame(() => {
+      const height = bar.getBoundingClientRect().height;
+      const endTop = Math.max(0, window.innerHeight - height - DOCK_BOTTOM);
+
+      const anim = bar.animate(
+        [
+          { top: "0px", transform: "translateX(-50%)" },
+          { top: `${endTop}px`, transform: "translateX(-50%)" },
+        ],
+        { duration: DESCEND_MS, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
+      );
+
+      anim.onfinish = () => {
+        anim.cancel();
+        dockAtBottom();
+      };
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (bar.classList.contains("is-docked") && !bar.classList.contains("is-collapsed")) {
+      dockAtBottom();
+    }
   });
 
   return {
-    playEntrance() {
-      bar.classList.add("is-descending");
-    },
+    playEntrance: playDescent,
   };
 }
 
