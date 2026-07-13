@@ -99,7 +99,11 @@ function checkZones() {
     }
   }
   if (found && found.id !== lastZone) {
-    zoneUI.show(found);
+    if (found.id === "hero") {
+      zoneUI.hide();
+    } else {
+      zoneUI.show(found);
+    }
     lastZone = found.id;
   } else if (!found && lastZone) {
     zoneUI.hide();
