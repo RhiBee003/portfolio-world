@@ -6,14 +6,14 @@ import { RESUME_PDF_SRC } from "./resume.js";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const RESUME_ASPECT = 1224 / 1584;
-export const RESUME_PAGE_WIDTH = 10.8;
+export const RESUME_PAGE_WIDTH = 16.5;
 export const RESUME_PAGE_HEIGHT = RESUME_PAGE_WIDTH / RESUME_ASPECT;
-export const RESUME_CENTER_Y = RESUME_PAGE_HEIGHT * 0.53;
+export const RESUME_CENTER_Y = RESUME_PAGE_HEIGHT * 0.52;
 
 export async function loadResumePdfTexture(pdfUrl = RESUME_PDF_SRC) {
   const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
   const page = await pdf.getPage(1);
-  const viewport = page.getViewport({ scale: 2.2 });
+  const viewport = page.getViewport({ scale: 3.2 });
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(viewport.width);
   canvas.height = Math.ceil(viewport.height);
