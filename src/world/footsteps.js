@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-const LIFETIME = 2.1;
+const LIFETIME = 3.4;
 const BASE_OPACITY = 0.78;
 const STEP_THRESHOLD = 0.28;
 const GROUND_Y = 0.022;
