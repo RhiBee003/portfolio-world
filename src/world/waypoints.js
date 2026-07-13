@@ -26,7 +26,7 @@ export const WAYPOINTS = [
     title: "WhiskerWatch",
     body: "Cat care app with breed guides, vet records, and daily routines.",
     links: [
-      { label: "Live app", href: "https://whiskerwatch-dh13.onrender.com" },
+      { label: "Live app", href: "https://whiskerwatch.onrender.com" },
       { label: "Design", href: "https://rhibee003.github.io/whiskerwatch-design.html" },
     ],
     pathT: 0.24,
