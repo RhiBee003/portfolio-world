@@ -68,6 +68,38 @@ export const WAYPOINTS = [
       { label: "LinkedIn", href: "https://www.linkedin.com/feed/" },
       { label: "GitHub", href: "https://github.com/RhiBee003" },
     ],
+    floatSections: [
+      {
+        text: "IT support and software developer. I ship polished web experiences end to end.",
+        fontSize: 16,
+        fontWeight: 500,
+        worldWidth: 7.6,
+        maxWidth: 500,
+        y: 3.45,
+      },
+      {
+        text:
+          "TechProven — IT Support & Software Developer\n" +
+          "Build and maintain full-stack web apps with Rust, JavaScript, Vue, and HTML/CSS.",
+        fontSize: 14,
+        fontWeight: 500,
+        worldWidth: 8.2,
+        maxWidth: 520,
+        y: 1.95,
+        lineHeight: 1.4,
+      },
+      {
+        text:
+          "RB Entertainment — Founder\n" +
+          "Websites, scheduling, contracts, invoicing, and live-event technical support.",
+        fontSize: 14,
+        fontWeight: 500,
+        worldWidth: 8.2,
+        maxWidth: 520,
+        y: 0.35,
+        lineHeight: 1.4,
+      },
+    ],
     pathT: 0.64,
     side: -1,
     sideOffset: 8.5,

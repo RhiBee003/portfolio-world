@@ -467,7 +467,7 @@ export function createPathFloatingLabels(curve) {
           return;
         }
 
-        const panel = createTextPanel(wp.title, {
+        const titlePanel = createTextPanel(wp.title, {
           fontSize: 30,
           fontWeight: 600,
           color: FLOATING_TEXT_COLOR,
@@ -481,10 +481,14 @@ export function createPathFloatingLabels(curve) {
             ? { glowMaxOpacity: 1.35, glowProximity: 0.82 }
             : {}),
         });
-        panel.position.y = 4.8;
-        panel.userData.baseY = 4.8;
-        panels.push(panel);
-        textGroup.add(panel);
+        titlePanel.position.y = 4.8;
+        titlePanel.userData.baseY = 4.8;
+        panels.push(titlePanel);
+        textGroup.add(titlePanel);
+
+        if (wp.floatSections?.length) {
+          addFloatingPanels(textGroup, panels, wp.floatSections, index * 0.8);
+        }
       },
       wp.id === "resume"
         ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.sideOffset + wp.radius * 1.55 }
