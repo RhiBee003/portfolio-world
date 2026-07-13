@@ -64,6 +64,12 @@ export function createCat() {
 
   cat.userData.tail = tail;
 
+  cat.traverse((child) => {
+    if (child.isMesh) {
+      child.renderOrder = 6;
+    }
+  });
+
   return cat;
 }
 

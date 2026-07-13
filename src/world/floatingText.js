@@ -219,12 +219,12 @@ function createPathRing() {
       transparent: true,
       opacity: 0,
       depthWrite: false,
-      depthTest: false,
+      depthTest: true,
     })
   );
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.14;
-  ring.renderOrder = 5;
+  ring.renderOrder = 2;
   ring.frustumCulled = false;
   return ring;
 }
