@@ -5,6 +5,8 @@ import { RESUME_ZONE } from "./resume.js";
 export const RING_T_OFFSET = -0.045;
 export const RING_ZONE_RADIUS = 3.1;
 export const START_OVERPASS_T = 0.018;
+/** Keep the hero spawn ring clear of buildings. */
+export const SPAWN_CLEAR_RADIUS = 11;
 
 export const WAYPOINTS = [
   {
@@ -12,9 +14,7 @@ export const WAYPOINTS = [
     tag: "Start",
     title: "Rhiannon Black",
     body: "Creative developer and designer. Follow the trail to explore projects.",
-    links: [
-      { label: "Classic portfolio", href: "https://rhibee003.github.io" },
-    ],
+    links: [],
     pathT: 0.15,
     side: 1,
     sideOffset: 8,
@@ -31,6 +31,20 @@ export const WAYPOINTS = [
     ],
     pathT: 0.24,
     side: -1,
+    sideOffset: 8.5,
+    radius: 6,
+  },
+  {
+    id: "classic-portfolio",
+    tag: "Project 03",
+    title: "Classic Portfolio",
+    body: "Original portfolio site — featured projects, experience, and contact in a clean scrollable layout.",
+    links: [
+      { label: "Live site", href: "https://rhibee003.github.io" },
+      { label: "3D world", href: "https://rhibee003.github.io/portfolio-world/" },
+    ],
+    pathT: 0.34,
+    side: 1,
     sideOffset: 8.5,
     radius: 6,
   },
@@ -133,6 +147,17 @@ export function getWaypointRingT(wp) {
 
 export function getWaypointRingPosition(wp, curve) {
   return pathCenterAt(curve, getWaypointRingT(wp));
+}
+
+export function getPlayerSpawnPoint(curve) {
+  const hero = WAYPOINTS.find((wp) => wp.id === "hero");
+  return getWaypointRingPosition(hero, curve);
+}
+
+export function isInSpawnClearance(x, z, spawn, radius = SPAWN_CLEAR_RADIUS) {
+  const dx = x - spawn.x;
+  const dz = z - spawn.z;
+  return dx * dx + dz * dz < radius * radius;
 }
 
 export function getWaypointRingRadius() {

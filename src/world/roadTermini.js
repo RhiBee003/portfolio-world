@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { buildingMaterial, brickMaterial } from "./materials.js";
 import { addBuildingWindows } from "./buildingWindows.js";
-import { START_OVERPASS_T } from "./waypoints.js";
+import { START_OVERPASS_T, getPlayerSpawnPoint, isInSpawnClearance } from "./waypoints.js";
 
 function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
   const cos = Math.cos(rotY);
@@ -49,7 +49,7 @@ function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) 
   return mesh;
 }
 
-function createStartOverpass(curve, group, collisions) {
+function createStartOverpass(curve, group, collisions, spawn) {
   const overpassT = START_OVERPASS_T;
   const start = curve.getPointAt(overpassT);
   const tangent = curve.getTangentAt(overpassT).normalize();
@@ -127,6 +127,8 @@ function createStartOverpass(curve, group, collisions) {
     const wx = cx + normal.x * centerOff;
     const wz = cz + normal.z * centerOff;
 
+    if (isInSpawnClearance(wx, wz, spawn)) return;
+
     addBox(group, collisions, wx, 0, wz, wingW, wingH, wingD, yaw, buildingMaterial("light"));
 
     addBox(
@@ -145,6 +147,7 @@ function createStartOverpass(curve, group, collisions) {
   }
 
   addConnectedWing(1);
+  addConnectedWing(-1);
 
   const tunnelLight = new THREE.Mesh(
     new THREE.PlaneGeometry(spanW - 3, 2.8),
@@ -263,8 +266,9 @@ function createEndRoundabout(curve, group, collisions) {
 export function createRoadTermini(curve) {
   const group = new THREE.Group();
   const collisions = [];
+  const spawn = getPlayerSpawnPoint(curve);
 
-  createStartOverpass(curve, group, collisions);
+  createStartOverpass(curve, group, collisions, spawn);
   createEndRoundabout(curve, group, collisions);
 
   return { group, collisions };

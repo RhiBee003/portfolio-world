@@ -271,7 +271,8 @@ export class CatController {
     return target.copy(this.getEyePosition()).addScaledVector(lookDir, 12);
   }
 
-  update(dt, input, collisions, checkCollision, mode, viewYaw, curve) {
+  update(dt, input, collisions, checkCollision, mode, viewYaw, curve, options = {}) {
+    const { getGroundY, maxStepUp = 0.42 } = options;
     if (this.isSeated) {
       this.walkPhase += dt * 0.8;
     }
@@ -363,10 +364,30 @@ export class CatController {
     this.verticalVelocity -= this.gravity * dt;
     this.position.y += this.verticalVelocity * dt;
 
-    if (this.position.y <= 0) {
-      this.position.y = 0;
-      this.verticalVelocity = 0;
-      this.grounded = true;
+    const groundY = getGroundY ? getGroundY(this.position.x, this.position.z) : 0;
+    const stepTolerance = getGroundY ? maxStepUp : 0.05;
+    const delta = groundY - this.position.y;
+
+    if (!getGroundY) {
+      if (this.position.y <= 0) {
+        this.position.y = 0;
+        this.verticalVelocity = 0;
+        this.grounded = true;
+      }
+    } else if (this.verticalVelocity <= 0) {
+      if (delta > stepTolerance) {
+        if (this.position.y > groundY + 0.1) this.grounded = false;
+      } else if (delta > 0 && this.grounded) {
+        this.position.y = groundY;
+        this.verticalVelocity = 0;
+        this.grounded = true;
+      } else if (this.position.y <= groundY + 0.06) {
+        this.position.y = groundY;
+        this.verticalVelocity = 0;
+        this.grounded = true;
+      } else if (this.position.y > groundY + stepTolerance + 0.08) {
+        this.grounded = false;
+      }
     }
 
     this.cat.position.x = this.position.x;

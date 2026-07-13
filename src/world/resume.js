@@ -7,6 +7,6 @@ export const RESUME_ZONE = {
   tag: "Resume",
   title: "Resume",
   body:
-    "Your full resume floats beside the path — open the PDF for a downloadable copy with every detail.",
+    "IT support specialist with 3+ years troubleshooting hardware, software, and networking for small businesses, and a full-stack developer building web apps with Rust, JavaScript, Vue, and Python.",
   links: [{ label: "View full resume (PDF)", href: RESUME_PDF_HREF }],
 };

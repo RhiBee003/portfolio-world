@@ -1,0 +1,12 @@
+# Render Blueprint — Portfolio World (static Vite / Three.js site)
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: portfolio-world
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

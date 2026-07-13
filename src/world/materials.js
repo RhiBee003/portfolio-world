@@ -52,17 +52,22 @@ export function brickMaterial(color, options = {}) {
   });
 }
 
+const buildingMaterials = {};
+
 export function buildingMaterial(tone) {
-  const colors = {
-    dark: 0x2a2a2e,
-    mid: 0x4a4a52,
-    light: 0x6e6e78,
-  };
-  return new THREE.MeshStandardMaterial({
-    color: colors[tone] ?? colors.mid,
-    roughness: 0.82,
-    metalness: 0.08,
-  });
+  if (!buildingMaterials[tone]) {
+    const colors = {
+      dark: 0x2a2a2e,
+      mid: 0x4a4a52,
+      light: 0x6e6e78,
+    };
+    buildingMaterials[tone] = new THREE.MeshStandardMaterial({
+      color: colors[tone] ?? colors.mid,
+      roughness: 0.82,
+      metalness: 0.08,
+    });
+  }
+  return buildingMaterials[tone];
 }
 
 let windowLitMaterial;

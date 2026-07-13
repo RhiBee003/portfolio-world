@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="description" content="Rhiannon Black — 3D portfolio world" />
     <meta name="theme-color" content="#f6c8d7" />
     <title>Rhiannon Black · Portfolio World</title>
@@ -13,6 +13,7 @@
       <canvas id="world-canvas"></canvas>
 
       <div class="ui-dock" id="ui-dock">
+        <div class="context-hint" id="context-hint" hidden aria-live="polite"></div>
         <div class="bio-bar" id="bio-bar" aria-live="polite">
           <button class="bio-collapse" id="bio-collapse" type="button" aria-label="Collapse bio">−</button>
           <div class="bio-bar-content">
@@ -36,22 +37,45 @@
       <aside class="controls-key" id="controls-key" aria-label="Controls">
         <div class="controls-key-body" id="controls-key-body">
           <p class="controls-key-title">Controls</p>
-          <ul class="controls-key-list">
-            <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</li>
-            <li><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> Perspective</li>
-            <li><kbd>Mouse</kbd> Perspective (when cursor locked)</li>
-            <li><kbd>Shift</kbd> Sprint</li>
-            <li><kbd>Space</kbd> Jump</li>
-            <li><kbd>Click</kbd> Lock / unlock cursor</li>
-            <li><kbd>Esc</kbd> Free cursor</li>
+          <ul class="controls-key-list" id="controls-key-list">
+            <li data-desktop><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</li>
+            <li data-desktop><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> Perspective</li>
+            <li data-desktop><kbd>Mouse</kbd> Perspective (when cursor locked)</li>
+            <li data-desktop><kbd>Shift</kbd> Sprint</li>
+            <li data-desktop><kbd>Space</kbd> Jump · board train or elevator</li>
+            <li data-desktop><kbd>E</kbd> Ride to the other stop</li>
+            <li data-desktop><kbd>Click</kbd> Lock / unlock cursor</li>
+            <li data-desktop><kbd>Esc</kbd> Free cursor</li>
+            <li data-mobile hidden>Drag — Move your cat</li>
+            <li data-mobile hidden>Tap — Jump · board train / elevator</li>
+            <li data-mobile hidden>Double-tap — Ride to the other stop</li>
+            <li data-mobile hidden>Tap signs — Open links</li>
           </ul>
         </div>
       </aside>
 
+      <div class="mode-select" id="mode-select" hidden>
+        <div class="mode-select-card" role="dialog" aria-labelledby="mode-select-title" aria-modal="true">
+          <p class="mode-select-kicker">Portfolio World</p>
+          <h1 id="mode-select-title">Mobile or desktop?</h1>
+          <p class="mode-select-copy">Choose how you want to explore the city.</p>
+          <div class="mode-select-actions">
+            <button type="button" class="mode-select-btn mode-select-btn-mobile" data-mode="mobile">
+              <span class="mode-select-btn-label">Mobile</span>
+              <span class="mode-select-btn-hint">Tap &amp; drag only</span>
+            </button>
+            <button type="button" class="mode-select-btn mode-select-btn-desktop" data-mode="desktop">
+              <span class="mode-select-btn-label">Desktop</span>
+              <span class="mode-select-btn-hint">Keyboard &amp; mouse</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="loading" id="loading">
         <div class="loading-inner">
           <span class="loading-spinner" aria-hidden="true"></span>
-          <p>Loading…</p>
+          <p id="loading-status">Starting world…</p>
         </div>
       </div>
     </div>

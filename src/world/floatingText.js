@@ -20,7 +20,7 @@ function lightenHex(hex, amount) {
 }
 
 const PROJECT_TEXT_COLOR = lightenHex(UNDERLINE_HEX, 0.1);
-const TEXT_RENDER_SCALE = Math.min(3, Math.max(2, typeof window !== "undefined" ? window.devicePixelRatio || 1 : 2));
+const TEXT_RENDER_SCALE = 2;
 
 function configureTextTexture(texture) {
   texture.colorSpace = THREE.SRGBColorSpace;
