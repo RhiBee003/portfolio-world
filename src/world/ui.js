@@ -64,6 +64,10 @@ export function createBioBar() {
 
   return {
     playEntrance: playDescent,
+    dismissForZone() {
+      if (!bar.classList.contains("can-resize")) return;
+      setCollapsed(true);
+    },
   };
 }
 

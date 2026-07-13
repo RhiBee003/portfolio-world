@@ -249,7 +249,7 @@ body[data-cursor-mode="look"] #world-canvas {
 .zone-panel {
   position: fixed;
   left: 50%;
-  bottom: 1.25rem;
+  bottom: 4.75rem;
   z-index: 20;
   width: min(360px, calc(100% - 2rem));
   padding: 1rem 1.1rem 1.1rem;
@@ -393,7 +393,7 @@ body[data-cursor-mode="look"] #world-canvas {
   }
 
   .zone-panel {
-    bottom: 0.85rem;
+    bottom: 4.25rem;
     width: min(360px, calc(100% - 1.5rem));
   }
 }

@@ -47,6 +47,13 @@ function pathApproachFade(catPathT, labelPathT) {
   return smoothstep(1 - ahead / PATH_FADE_RANGE);
 }
 
+function pathPassFade(catPathT, labelPathT) {
+  const behind = catPathT - labelPathT;
+  if (behind <= 0) return 1;
+  if (behind >= PATH_FADE_RANGE) return 0;
+  return smoothstep(1 - behind / PATH_FADE_RANGE);
+}
+
 function wrapLines(ctx, text, maxWidth) {
   const paragraphs = text.split("\n");
   const lines = [];
@@ -632,7 +639,9 @@ export function animateFloatingText(group, elapsed, catPosition, camera, dt = 0.
       stop.userData.textAnchor,
       stop.userData.textProximityRadius
     );
-    const pathFade = pathApproachFade(catPathT, stop.userData.pathT ?? 0);
+    const pathFade =
+      pathApproachFade(catPathT, stop.userData.pathT ?? 0) *
+      pathPassFade(catPathT, stop.userData.pathT ?? 0);
     const textProximity = pathFade * Math.max(spatialFade, ringProximity * 0.9);
     applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt);
   });

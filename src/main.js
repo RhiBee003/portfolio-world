@@ -5,6 +5,7 @@ import { createCity, createGround, createPathCurve, checkCollision } from "./wor
 import { createRoadTermini, animateFountain } from "./world/roadTermini.js";
 import { createCat, CatController } from "./world/cat.js";
 import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointRingT } from "./world/waypoints.js";
+import { closestPathT } from "./world/pathLayout.js";
 import { createZoneUI, createInput, createBioBar } from "./world/ui.js";
 import { createPathFloatingLabels, animateFloatingText } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
@@ -85,27 +86,36 @@ const eyeLookAt = new THREE.Vector3();
 const cameraScratch = new THREE.Vector3();
 
 function checkZones() {
-  let found = null;
+  const catPathT = closestPathT(curve, cat.position.x, cat.position.z);
   const zoneRadius = getWaypointRingRadius();
   const zoneRadiusSq = zoneRadius * zoneRadius;
+  const passedThreshold = 0.07;
+
+  let found = null;
 
   for (const wp of WAYPOINTS) {
+    if (wp.id === "hero") continue;
+
+    const ringT = getWaypointRingT(wp);
+    if (catPathT - ringT > passedThreshold) continue;
+
     const trigger = getWaypointRingPosition(wp, curve);
     const dx = cat.position.x - trigger.x;
     const dz = cat.position.z - trigger.z;
-    if (dx * dx + dz * dz < zoneRadiusSq) {
+    if (dx * dx + dz * dz >= zoneRadiusSq) continue;
+
+    if (!found || wp.pathT > found.pathT) {
       found = wp;
-      break;
     }
   }
-  if (found && found.id !== lastZone) {
-    if (found.id === "hero") {
-      zoneUI.hide();
-    } else {
+
+  if (found) {
+    if (found.id !== lastZone) {
       zoneUI.show(found);
+      bioBar?.dismissForZone?.();
+      lastZone = found.id;
     }
-    lastZone = found.id;
-  } else if (!found && lastZone) {
+  } else if (lastZone) {
     zoneUI.hide();
     lastZone = null;
   }
