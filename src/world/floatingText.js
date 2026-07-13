@@ -214,6 +214,8 @@ function createTextPanel(text, options = {}) {
   panel.userData.textMesh = textMesh;
   panel.userData.glowMesh = glowMesh;
   panel.userData.glowLevel = 0;
+  panel.userData.glowMaxOpacity = options.glowMaxOpacity ?? 1;
+  panel.userData.glowProximity = options.glowProximity ?? 0.55;
   panel.userData.baseY = options.y ?? 4;
   panel.userData.phase = options.phase ?? 0;
   panel.userData.freq = options.freq ?? 0.7;
@@ -504,6 +506,9 @@ export function createPathFloatingLabels(curve) {
           phase: index * 0.8,
           freq: 0.45,
           drift: 0.03,
+          ...(wp.id === "cotton-elder"
+            ? { glowMaxOpacity: 1.35, glowProximity: 0.82 }
+            : {}),
         });
         panel.position.y = 4.8;
         panel.userData.baseY = 4.8;
@@ -601,7 +606,10 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
 
     const showText = showLabels;
     const lookFactor = lookAtPanelFactor(camera, panel);
-    const glowTarget = Math.max(lookFactor, showText ? textProximity * 0.55 : 0);
+    const glowTarget = Math.max(
+      lookFactor,
+      showText ? textProximity * (panel.userData.glowProximity ?? 0.55) : 0
+    );
     panel.userData.glowLevel = THREE.MathUtils.lerp(
       panel.userData.glowLevel ?? 0,
       glowTarget,
@@ -610,7 +618,9 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
     textMesh.material.opacity = showText ? 1 : 0;
     textMesh.visible = showText;
 
-    const glowOpacity = showText ? panel.userData.glowLevel * GLOW_MAX_OPACITY : 0;
+    const glowOpacity = showText
+      ? panel.userData.glowLevel * GLOW_MAX_OPACITY * (panel.userData.glowMaxOpacity ?? 1)
+      : 0;
     glowMesh.material.opacity = glowOpacity;
     glowMesh.visible = glowOpacity > 0.008;
   });
