@@ -6,8 +6,9 @@ import { RESUME_PDF_SRC } from "./resume.js";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const RESUME_PAGE_ASPECT = 612 / 792;
-export const RESUME_PAGE_WIDTH = 22;
-export const RESUME_PAGE_HEIGHT = RESUME_PAGE_WIDTH / RESUME_PAGE_ASPECT;
+/** ~perimeter building height (16–28) with a little extra for readability at cat level */
+export const RESUME_PAGE_HEIGHT = 21;
+export const RESUME_PAGE_WIDTH = RESUME_PAGE_HEIGHT * RESUME_PAGE_ASPECT;
 export const RESUME_CENTER_Y = RESUME_PAGE_HEIGHT * 0.5;
 
 function cropCanvasToContent(sourceCanvas, threshold = 248) {
