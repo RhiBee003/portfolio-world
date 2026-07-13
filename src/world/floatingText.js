@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
-import { RESUME_FLOAT_SECTIONS } from "./resume.js";
+import { createResumePdfPage } from "./resumePage.js";
 import { PROJECT_PREVIEWS } from "./projectPreviews.js";
 
 const textureLoader = new THREE.TextureLoader();
@@ -299,105 +299,6 @@ function createPathRing() {
   return ring;
 }
 
-function createResumePageTexture() {
-  const width = 512;
-  const height = 740;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  const inset = 10;
-  const radius = 16;
-
-  ctx.clearRect(0, 0, width, height);
-
-  ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
-  roundRect(ctx, inset + 6, inset + 8, width - inset * 2, height - inset * 2, radius);
-  ctx.fill();
-
-  ctx.fillStyle = "#fffef9";
-  roundRect(ctx, inset, inset, width - inset * 2, height - inset * 2, radius);
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.11)";
-  ctx.lineWidth = 2;
-  roundRect(ctx, inset, inset, width - inset * 2, height - inset * 2, radius);
-  ctx.stroke();
-
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.65)";
-  ctx.lineWidth = 1;
-  roundRect(ctx, inset + 2, inset + 2, width - inset * 2 - 4, height - inset * 2 - 4, radius - 2);
-  ctx.stroke();
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-function createResumePageBackground(phaseSeed) {
-  const pageWidth = 10.4;
-  const pageHeight = 15.1;
-  const centerY = 7.85;
-  const group = new THREE.Group();
-
-  const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(pageWidth * 1.02, pageHeight * 1.02),
-    new THREE.MeshBasicMaterial({
-      color: 0x1a1a1a,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      depthTest: false,
-      fog: false,
-      toneMapped: false,
-      side: THREE.DoubleSide,
-    })
-  );
-  shadow.position.set(0.14, -0.1, -0.1);
-  shadow.renderOrder = 5;
-
-  const page = new THREE.Mesh(
-    new THREE.PlaneGeometry(pageWidth, pageHeight),
-    new THREE.MeshBasicMaterial({
-      map: createResumePageTexture(),
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      depthTest: false,
-      fog: false,
-      toneMapped: false,
-      side: THREE.DoubleSide,
-    })
-  );
-  page.renderOrder = 6;
-  page.position.z = -0.04;
-
-  group.add(shadow);
-  group.add(page);
-  group.position.y = centerY;
-  group.userData.baseY = centerY;
-  group.userData.pageMesh = page;
-  group.userData.shadowMesh = shadow;
-  group.userData.phase = phaseSeed;
-  group.userData.freq = 0.38;
-  group.userData.drift = 0.018;
-  return group;
-}
-
 function createUnderline(width) {
   const line = new THREE.Mesh(
     new THREE.PlaneGeometry(width, 0.1),
@@ -491,10 +392,7 @@ export function createPathFloatingLabels(curve) {
       (textGroup, panels) => {
         if (wp.id === "hero") return;
 
-        if (wp.id === "resume") {
-          addFloatingPanels(textGroup, panels, RESUME_FLOAT_SECTIONS, index * 0.8);
-          return;
-        }
+        if (wp.id === "resume") return;
 
         const panel = createTextPanel(wp.title, {
           fontSize: 30,
@@ -521,7 +419,7 @@ export function createPathFloatingLabels(curve) {
     );
 
     if (wp.id === "resume") {
-      const pageBack = createResumePageBackground(index * 0.8);
+      const pageBack = createResumePdfPage(index * 0.8);
       stop.userData.textGroup.add(pageBack);
       stop.userData.pageBack = pageBack;
     }
@@ -593,9 +491,10 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
 
   if (stop.userData.pageBack) {
     const pageBack = stop.userData.pageBack;
-    const { baseY, phase, freq, drift, pageMesh, shadowMesh } = pageBack.userData;
+    const { baseY, phase, freq, drift, pageMesh, frameMesh, shadowMesh } = pageBack.userData;
     pageBack.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    pageMesh.material.opacity = showLabels ? 0.98 : 0;
+    pageMesh.material.opacity = showLabels ? 1 : 0;
+    if (frameMesh) frameMesh.material.opacity = showLabels ? 0.98 : 0;
     shadowMesh.material.opacity = showLabels ? 0.12 : 0;
     pageBack.visible = showLabels;
   }
