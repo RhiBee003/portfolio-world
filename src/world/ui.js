@@ -19,13 +19,14 @@ export function createBioBar() {
   bar.addEventListener("click", (e) => e.stopPropagation());
 
   bar.addEventListener("animationend", () => {
-    bar.classList.remove("is-rising");
+    bar.classList.remove("is-descending");
     bar.classList.add("is-docked", "can-resize");
+    bar.style.transform = "translateX(-50%)";
   });
 
   return {
     playEntrance() {
-      bar.classList.add("is-rising");
+      bar.classList.add("is-descending");
     },
   };
 }

@@ -52,7 +52,8 @@ body[data-cursor-mode="look"] #world-canvas {
 .bio-bar {
   position: fixed;
   left: 50%;
-  top: calc(100vh - 8.5rem);
+  top: 0.85rem;
+  bottom: auto;
   z-index: 11;
   width: min(360px, calc(100% - 2rem));
   min-height: 7.5rem;
@@ -66,12 +67,14 @@ body[data-cursor-mode="look"] #world-canvas {
   overflow: hidden;
 }
 
-.bio-bar.is-rising {
-  animation: bio-rise 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.bio-bar.is-descending {
+  animation: bio-descend 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .bio-bar.is-docked {
-  top: 0.85rem;
+  top: auto;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
 }
 
 .bio-bar.can-resize {
@@ -90,9 +93,9 @@ body[data-cursor-mode="look"] #world-canvas {
   border-radius: 7px;
 }
 
-@keyframes bio-rise {
+@keyframes bio-descend {
   to {
-    top: 0.85rem;
+    transform: translateX(-50%) translateY(calc(100vh - 10rem));
   }
 }
 
@@ -375,17 +378,16 @@ body[data-cursor-mode="look"] #world-canvas {
 @media (max-width: 640px) {
   .bio-bar {
     width: min(360px, calc(100% - 1.5rem));
-    top: calc(100vh - 8rem);
-  }
-
-  .bio-bar.is-docked,
-  .bio-bar.is-rising {
     top: 0.75rem;
   }
 
-  @keyframes bio-rise {
+  .bio-bar.is-docked {
+    bottom: 0.85rem;
+  }
+
+  @keyframes bio-descend {
     to {
-      top: 0.75rem;
+      transform: translateX(-50%) translateY(calc(100vh - 9.5rem));
     }
   }
 
