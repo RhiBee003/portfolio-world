@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { RESUME_FLOAT_SECTIONS } from "./resume.js";
+import { PROJECT_PREVIEWS, createWhiskerwatchPreviewTexture } from "./projectPreviews.js";
+
+const textureLoader = new THREE.TextureLoader();
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
@@ -211,6 +214,71 @@ function createTextPanel(text, options = {}) {
   return panel;
 }
 
+function createPreviewPanel(previewConfig, phaseSeed) {
+  const { worldWidth, y, aspect, src, procedural } = previewConfig;
+  const worldHeight = worldWidth / aspect;
+  const pad = 0.16;
+  const group = new THREE.Group();
+
+  const frame = new THREE.Mesh(
+    new THREE.PlaneGeometry(worldWidth + pad, worldHeight + pad),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      fog: false,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  frame.renderOrder = 7;
+
+  const imageMat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    depthTest: false,
+    fog: false,
+    toneMapped: false,
+    side: THREE.DoubleSide,
+  });
+
+  const image = new THREE.Mesh(new THREE.PlaneGeometry(worldWidth, worldHeight), imageMat);
+  image.renderOrder = 7;
+  image.position.z = 0.01;
+
+  if (procedural === "whiskerwatch") {
+    imageMat.map = createWhiskerwatchPreviewTexture();
+  } else if (src) {
+    textureLoader.load(
+      src,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        imageMat.map = tex;
+        imageMat.needsUpdate = true;
+      },
+      undefined,
+      () => {
+        imageMat.map = createWhiskerwatchPreviewTexture();
+        imageMat.needsUpdate = true;
+      }
+    );
+  }
+
+  group.add(frame);
+  group.add(image);
+  group.userData.frameMesh = frame;
+  group.userData.imageMesh = image;
+  group.userData.baseY = y;
+  group.userData.phase = phaseSeed;
+  group.userData.freq = 0.38;
+  group.userData.drift = 0.02;
+  group.position.y = y;
+  return group;
+}
+
 function createPathRing() {
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(1.4, 2.1, 40),
@@ -272,6 +340,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   textGroup.position.set(sidePos.x - ringCenter.x, 0, sidePos.z - ringCenter.z);
   stop.userData.textGroup = textGroup;
   stop.userData.panels = [];
+  stop.userData.previews = [];
 
   buildText(textGroup, stop.userData.panels);
 
@@ -346,6 +415,14 @@ export function createPathFloatingLabels(curve) {
         ? { underlineWidth: 5.2, ringTOffset: RING_T_OFFSET, textProximityRadius: wp.sideOffset + wp.radius * 1.55 }
         : {}
     );
+
+    const previewConfig = PROJECT_PREVIEWS[wp.id];
+    if (previewConfig) {
+      const preview = createPreviewPanel(previewConfig, index * 0.8 + 0.25);
+      stop.userData.textGroup.add(preview);
+      stop.userData.previews.push(preview);
+    }
+
     group.add(stop);
   });
 
@@ -389,16 +466,26 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
   stop.userData.ring.material.opacity = ringProximity * 0.65;
   stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
 
+  const showLabels = textProximity > TEXT_SHOW_THRESHOLD;
+
   if (stop.userData.underline) {
     stop.userData.underline.material.opacity = textProximity;
     stop.userData.underline.scale.x = 0.15 + textProximity * 0.85;
   }
 
+  stop.userData.previews.forEach((preview) => {
+    const { baseY, phase, freq, drift, frameMesh, imageMesh } = preview.userData;
+    preview.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
+    frameMesh.material.opacity = showLabels ? 0.97 : 0;
+    imageMesh.material.opacity = showLabels ? 1 : 0;
+    preview.visible = showLabels;
+  });
+
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift, textMesh, glowMesh } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
 
-    const showText = textProximity > TEXT_SHOW_THRESHOLD;
+    const showText = showLabels;
     const lookFactor = lookAtPanelFactor(camera, panel);
     const glowTarget = Math.max(lookFactor, showText ? textProximity * 0.45 : 0);
     panel.userData.glowLevel = THREE.MathUtils.lerp(
