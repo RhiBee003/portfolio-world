@@ -31,8 +31,9 @@ function configureTextTexture(texture) {
 }
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.19;
+/** Longer path fade so the resume eases in/out instead of popping. */
+const RESUME_PATH_FADE_RANGE = 0.34;
 const GLOW_MAX_OPACITY = 0.72;
-const TEXT_SHOW_THRESHOLD = 0.065;
 const LOOK_DOT_START = 0.58;
 const LOOK_DOT_FULL = 0.9;
 
@@ -60,18 +61,10 @@ function textFadeAt(catPosition, anchor, radius) {
   return smoothstep(1 - dist / radius);
 }
 
-function pathApproachFade(catPathT, labelPathT) {
-  const ahead = labelPathT - catPathT;
-  if (ahead <= 0) return 1;
-  if (ahead >= PATH_FADE_RANGE) return 0;
-  return smoothstep(1 - ahead / PATH_FADE_RANGE);
-}
-
-function pathPassFade(catPathT, labelPathT) {
-  const behind = catPathT - labelPathT;
-  if (behind <= 0) return 1;
-  if (behind >= PATH_FADE_RANGE) return 0;
-  return smoothstep(1 - behind / PATH_FADE_RANGE);
+function pathDistanceFade(catPathT, anchorPathT, range = PATH_FADE_RANGE) {
+  const dist = Math.abs(catPathT - anchorPathT);
+  if (dist >= range) return 0;
+  return smoothstep(1 - dist / range);
 }
 
 function wrapLines(ctx, text, maxWidth) {
@@ -411,6 +404,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   const stop = new THREE.Group();
   stop.position.set(ringCenter.x, 0, ringCenter.z);
   stop.userData.pathT = triggerT;
+  stop.userData.ringT = ringT;
   stop.userData.proximityAnchor = ringCenter;
   stop.userData.proximityRadius = proximityRadius;
   stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
@@ -612,63 +606,69 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
   stop.userData.ring.material.opacity = ringProximity * 0.65;
   stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
 
-  const showLabels = textProximity > TEXT_SHOW_THRESHOLD;
+  const fade = smoothstep(textProximity);
+  const visible = fade > 0.008;
 
   if (stop.userData.underline) {
-    const proximity = smoothstep(textProximity);
-    stop.userData.underline.material.opacity = proximity;
-    stop.userData.underline.scale.x = 0.04 + proximity * 1.55;
+    stop.userData.underline.material.opacity = fade;
+    stop.userData.underline.scale.x = 0.04 + fade * 1.55;
   }
 
   stop.userData.previews.forEach((preview) => {
     const { baseY, phase, freq, drift, frameMesh, imageMesh } = preview.userData;
     preview.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    frameMesh.material.opacity = showLabels ? 0.97 : 0;
-    imageMesh.material.opacity = showLabels ? 1 : 0;
-    preview.visible = showLabels;
+    frameMesh.material.opacity = fade * 0.97;
+    imageMesh.material.opacity = fade;
+    preview.visible = visible;
   });
 
   if (stop.userData.infoCard) {
     const infoCard = stop.userData.infoCard;
     const { baseY, phase, freq, drift, cardMesh } = infoCard.userData;
     infoCard.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    cardMesh.material.opacity = showLabels ? 0.98 : 0;
-    infoCard.visible = showLabels;
+    cardMesh.material.opacity = fade * 0.98;
+    infoCard.visible = visible;
   }
 
   if (stop.userData.pageBack) {
     const pageBack = stop.userData.pageBack;
     const { baseY, phase, freq, drift, pageMesh, frameMesh, shadowMesh } = pageBack.userData;
     pageBack.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
-    pageMesh.material.opacity = showLabels ? 1 : 0;
-    if (frameMesh) frameMesh.material.opacity = showLabels ? 0.98 : 0;
-    shadowMesh.material.opacity = showLabels ? 0.12 : 0;
-    pageBack.visible = showLabels;
+
+    pageBack.userData.fadeLevel = THREE.MathUtils.lerp(
+      pageBack.userData.fadeLevel ?? 0,
+      fade,
+      1 - Math.exp(-5 * dt)
+    );
+    const pageFade = pageBack.userData.fadeLevel;
+    pageMesh.material.opacity = pageFade;
+    if (frameMesh) frameMesh.material.opacity = pageFade * 0.98;
+    shadowMesh.material.opacity = pageFade * 0.12;
+    pageBack.visible = pageFade > 0.008;
   }
 
   stop.userData.panels.forEach((panel) => {
     const { baseY, phase, freq, drift, textMesh, glowMesh, backMesh } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
 
-    const showText = showLabels;
     if (backMesh) {
-      backMesh.material.opacity = showText ? 0.96 : 0;
-      backMesh.visible = showText;
+      backMesh.material.opacity = fade * 0.96;
+      backMesh.visible = visible;
     }
     const lookFactor = lookAtPanelFactor(camera, panel);
     const glowTarget = Math.max(
       lookFactor,
-      showText ? textProximity * (panel.userData.glowProximity ?? 0.55) : 0
+      visible ? textProximity * (panel.userData.glowProximity ?? 0.55) : 0
     );
     panel.userData.glowLevel = THREE.MathUtils.lerp(
       panel.userData.glowLevel ?? 0,
       glowTarget,
       1 - Math.exp(-9 * dt)
     );
-    textMesh.material.opacity = showText ? 1 : 0;
-    textMesh.visible = showText;
+    textMesh.material.opacity = fade;
+    textMesh.visible = visible;
 
-    const glowOpacity = showText
+    const glowOpacity = visible
       ? panel.userData.glowLevel * GLOW_MAX_OPACITY * (panel.userData.glowMaxOpacity ?? 1)
       : 0;
     glowMesh.material.opacity = glowOpacity;
@@ -725,10 +725,18 @@ export function animateFloatingText(group, elapsed, catPosition, camera, dt = 0.
       stop.userData.textAnchor,
       stop.userData.textProximityRadius
     );
-    const pathFade =
-      pathApproachFade(catPathT, stop.userData.pathT ?? 0) *
-      pathPassFade(catPathT, stop.userData.pathT ?? 0);
-    const textProximity = pathFade * Math.max(spatialFade, ringProximity * 0.9);
+    const pathFadeRange = stop.userData.pageBack ? RESUME_PATH_FADE_RANGE : PATH_FADE_RANGE;
+    const ringT = stop.userData.ringT ?? stop.userData.pathT ?? 0;
+    const labelT = stop.userData.pathT ?? 0;
+    const ringPathFade = pathDistanceFade(catPathT, ringT, pathFadeRange);
+    const labelPathFade = pathDistanceFade(catPathT, labelT, pathFadeRange);
+    const pathFade = Math.max(ringPathFade, labelPathFade);
+
+    const proximityBlend = Math.max(spatialFade, ringProximity * 0.9);
+    let textProximity = pathFade * proximityBlend;
+    if (ringProximity > 0.12) {
+      textProximity = Math.max(textProximity, ringPathFade * ringProximity);
+    }
     applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt);
   });
 }

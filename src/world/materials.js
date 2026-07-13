@@ -7,7 +7,7 @@ export function createSunLighting(scene) {
   const ambient = new THREE.AmbientLight(0xfff4f8, 0.38);
   scene.add(ambient);
 
-  const hemi = new THREE.HemisphereLight(0xffe8f0, 0xe8e8ec, 0.42);
+  const hemi = new THREE.HemisphereLight(0xf2d0df, 0x9a9aa2, 0.42);
   scene.add(hemi);
 
   const sun = new THREE.DirectionalLight(0xffffff, 1.15);
@@ -29,6 +29,18 @@ export function createSunLighting(scene) {
   scene.add(fill);
 
   return { sun, ambient, hemi, fill };
+}
+
+export function cuteEyeIrisMaterial(color = 0xe8b878) {
+  return new THREE.MeshPhysicalMaterial({
+    color,
+    emissive: 0x2a2010,
+    emissiveIntensity: 0.08,
+    roughness: 0.2,
+    metalness: 0,
+    clearcoat: 0.55,
+    clearcoatRoughness: 0.14,
+  });
 }
 
 export function brickMaterial(color, options = {}) {

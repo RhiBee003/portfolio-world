@@ -12,15 +12,25 @@
     <div id="app">
       <canvas id="world-canvas"></canvas>
 
-      <div class="bio-bar" id="bio-bar" aria-live="polite">
-        <button class="bio-collapse" id="bio-collapse" type="button" aria-label="Collapse bio">−</button>
-        <div class="bio-bar-content">
-          <p class="bio-headline">
-            <span class="bio-name">Rhiannon Black</span>
-            <span class="bio-role">Developer</span>
-          </p>
-          <p class="bio-text">Creative developer and designer. Follow the trail to explore projects.</p>
+      <div class="ui-dock" id="ui-dock">
+        <div class="bio-bar" id="bio-bar" aria-live="polite">
+          <button class="bio-collapse" id="bio-collapse" type="button" aria-label="Collapse bio">−</button>
+          <div class="bio-bar-content">
+            <p class="bio-headline">
+              <span class="bio-name">Rhiannon Black</span>
+              <span class="bio-role">Developer</span>
+            </p>
+            <p class="bio-text">Creative developer and designer. Follow the trail to explore projects.</p>
+          </div>
         </div>
+
+        <aside class="zone-panel" id="zone-panel" hidden tabindex="-1">
+          <button class="zone-close" id="zone-close" type="button" aria-label="Close">×</button>
+          <p class="zone-tag" id="zone-tag"></p>
+          <h2 id="zone-title"></h2>
+          <p id="zone-body"></p>
+          <div class="zone-links" id="zone-links"></div>
+        </aside>
       </div>
 
       <aside class="controls-key" id="controls-key" aria-label="Controls">
@@ -37,14 +47,6 @@
           </ul>
         </div>
       </aside>
-
-      <div class="zone-panel" id="zone-panel" hidden tabindex="-1">
-        <button class="zone-close" id="zone-close" type="button" aria-label="Close">×</button>
-        <p class="zone-tag" id="zone-tag"></p>
-        <h2 id="zone-title"></h2>
-        <p id="zone-body"></p>
-        <div class="zone-links" id="zone-links"></div>
-      </div>
 
       <div class="loading" id="loading">
         <div class="loading-inner">

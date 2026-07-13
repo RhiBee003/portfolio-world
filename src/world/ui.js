@@ -1,15 +1,21 @@
 export function createBioBar() {
   const bar = document.getElementById("bio-bar");
   const collapseBtn = document.getElementById("bio-collapse");
+  const dock = document.getElementById("ui-dock");
   if (!bar || !collapseBtn) return;
 
   const DOCK_BOTTOM = 20;
   const DESCEND_MS = 1150;
 
+  let entranceDone = false;
+
   function dockAtBottom() {
-    bar.style.top = "auto";
-    bar.style.bottom = `${DOCK_BOTTOM}px`;
-    bar.style.transform = "translateX(-50%)";
+    bar.classList.remove("is-entering");
+    bar.style.position = "";
+    bar.style.left = "";
+    bar.style.top = "";
+    bar.style.bottom = "";
+    bar.style.transform = "";
     bar.classList.add("is-docked", "can-resize");
   }
 
@@ -25,6 +31,8 @@ export function createBioBar() {
   collapseBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     if (!bar.classList.contains("can-resize")) return;
+    const zonePanel = document.getElementById("zone-panel");
+    if (zonePanel && !zonePanel.hidden) return;
     setCollapsed(!bar.classList.contains("is-collapsed"));
   });
 
@@ -33,13 +41,13 @@ export function createBioBar() {
 
   function playDescent() {
     bar.classList.remove("is-collapsed", "is-docked", "can-resize");
-    bar.style.bottom = "auto";
+    bar.classList.add("is-entering");
     bar.style.top = "0px";
-    bar.style.transform = "translateX(-50%)";
 
     requestAnimationFrame(() => {
       const height = bar.getBoundingClientRect().height;
-      const endTop = Math.max(0, window.innerHeight - height - DOCK_BOTTOM);
+      const dockBottom = dock ? parseFloat(getComputedStyle(dock).bottom) || DOCK_BOTTOM : DOCK_BOTTOM;
+      const endTop = Math.max(0, window.innerHeight - height - dockBottom);
 
       const anim = bar.animate(
         [
@@ -51,6 +59,7 @@ export function createBioBar() {
 
       anim.onfinish = () => {
         anim.cancel();
+        entranceDone = true;
         dockAtBottom();
       };
     });
@@ -64,9 +73,20 @@ export function createBioBar() {
 
   return {
     playEntrance: playDescent,
-    dismissForZone() {
-      if (!bar.classList.contains("can-resize")) return;
+    isEntranceDone: () => entranceDone,
+    hideForZone() {
+      bar.classList.remove("is-entering");
+      bar.style.position = "";
+      bar.style.left = "";
+      bar.style.top = "";
+      bar.style.bottom = "";
+      bar.style.transform = "";
       setCollapsed(true);
+      bar.hidden = true;
+    },
+    restoreAfterZone() {
+      if (!bar.classList.contains("can-resize")) return;
+      bar.hidden = false;
     },
   };
 }
@@ -91,33 +111,37 @@ export function createZoneUI(options = {}) {
     const isNewZone = activeId !== zone.id;
     activeId = zone.id;
 
+    tag.textContent = zone.tag;
+    title.textContent = zone.title;
+    body.textContent = zone.body;
+    links.innerHTML = "";
+    zone.links.forEach((link) => {
+      const a = document.createElement("a");
+      a.href = link.href;
+      a.textContent = link.label;
+      const isPdf = link.href.toLowerCase().includes(".pdf");
+      a.target = link.href.startsWith("http") || isPdf ? "_blank" : "_self";
+      a.rel = "noopener noreferrer";
+      links.appendChild(a);
+    });
+
+    panel.hidden = false;
+    panel.style.animation = "";
+
     if (isNewZone) {
-      tag.textContent = zone.tag;
-      title.textContent = zone.title;
-      body.textContent = zone.body;
-      links.innerHTML = "";
-      zone.links.forEach((link) => {
-        const a = document.createElement("a");
-        a.href = link.href;
-        a.textContent = link.label;
-        const isPdf = link.href.toLowerCase().includes(".pdf");
-        a.target = link.href.startsWith("http") || isPdf ? "_blank" : "_self";
-        a.rel = "noopener noreferrer";
-        links.appendChild(a);
-      });
-      panel.hidden = false;
-      panel.style.animation = "none";
-      void panel.offsetWidth;
-      panel.style.animation = "";
       options.onOpen?.();
     }
   }
 
   function hide() {
-    if (!activeId) return;
+    if (!activeId && panel.hidden) return;
+    const wasOpen = Boolean(activeId);
     activeId = null;
     panel.hidden = true;
-    options.onClose?.();
+    panel.style.animation = "";
+    if (wasOpen) {
+      options.onClose?.();
+    }
   }
 
   closeBtn.addEventListener("click", (e) => {
@@ -166,7 +190,7 @@ export function createInput(canvas, options = {}) {
 
   function updateState() {
     state.moveForward = keys.has("KeyW");
-    state.moveBack = keys.has("KeyS");
+    state.moveBack = keys.has("KeyS") || keys.has("Backspace");
     state.moveLeft = keys.has("KeyA");
     state.moveRight = keys.has("KeyD");
     state.lookUp = keys.has("ArrowUp");
@@ -271,7 +295,7 @@ export function createInput(canvas, options = {}) {
     if (e.code.startsWith("Arrow")) {
       e.preventDefault();
     }
-    if (e.code === "KeyW" || e.code === "KeyA" || e.code === "KeyS" || e.code === "KeyD") {
+    if (e.code === "KeyW" || e.code === "KeyA" || e.code === "KeyS" || e.code === "KeyD" || e.code === "Backspace") {
       e.preventDefault();
     }
     keys.add(e.code);

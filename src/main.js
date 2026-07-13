@@ -5,10 +5,11 @@ import { createCity, createGround, createPathCurve, checkCollision } from "./wor
 import { createRoadTermini, animateFountain } from "./world/roadTermini.js";
 import { createCat, CatController } from "./world/cat.js";
 import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointRingT } from "./world/waypoints.js";
-import { closestPathT } from "./world/pathLayout.js";
 import { createZoneUI, createInput, createBioBar } from "./world/ui.js";
 import { createPathFloatingLabels, animateFloatingText, pickFloatingLink } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
+import { createSky } from "./world/sky.js";
+import { createFootstepTrail } from "./world/footsteps.js";
 
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
@@ -27,8 +28,11 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-const sceneFog = new THREE.Fog(0xfafafa, 35, 120);
+const sceneFog = new THREE.Fog(0xefc4d6, 35, 120);
 scene.fog = sceneFog;
+
+const sky = createSky();
+scene.add(sky);
 
 const { sun } = createSunLighting(scene);
 
@@ -55,6 +59,9 @@ scene.add(ground);
 const catMesh = createCat();
 scene.add(catMesh);
 const cat = new CatController(catMesh);
+
+const footsteps = createFootstepTrail();
+scene.add(footsteps.group);
 
 const heroWaypoint = WAYPOINTS.find((wp) => wp.id === "hero");
 const spawnT = getWaypointRingT(heroWaypoint);
@@ -98,38 +105,42 @@ const eyeLookAt = new THREE.Vector3();
 const cameraScratch = new THREE.Vector3();
 
 function checkZones() {
-  const catPathT = closestPathT(curve, cat.position.x, cat.position.z);
   const zoneRadius = getWaypointRingRadius();
   const zoneRadiusSq = zoneRadius * zoneRadius;
-  const passedThreshold = 0.07;
+  const zonesReady = bioBar?.isEntranceDone?.() ?? true;
 
   let found = null;
 
   for (const wp of WAYPOINTS) {
     if (wp.id === "hero") continue;
 
-    const ringT = getWaypointRingT(wp);
-    if (catPathT - ringT > passedThreshold) continue;
-
     const trigger = getWaypointRingPosition(wp, curve);
     const dx = cat.position.x - trigger.x;
     const dz = cat.position.z - trigger.z;
-    if (dx * dx + dz * dz >= zoneRadiusSq) continue;
+    const distSq = dx * dx + dz * dz;
+    if (distSq >= zoneRadiusSq) continue;
 
     if (!found || wp.pathT > found.pathT) {
       found = wp;
     }
   }
 
+  if (!zonesReady) return;
+
   if (found) {
+    bioBar?.hideForZone?.();
     if (found.id !== lastZone) {
       zoneUI.show(found);
-      bioBar?.dismissForZone?.();
       lastZone = found.id;
+    } else if (!zoneUI.isOpen()) {
+      zoneUI.show(found);
     }
-  } else if (lastZone) {
-    zoneUI.hide();
-    lastZone = null;
+  } else {
+    if (lastZone || zoneUI.isOpen()) {
+      zoneUI.hide();
+      bioBar?.restoreAfterZone?.();
+      lastZone = null;
+    }
   }
 }
 
@@ -234,6 +245,7 @@ function animate() {
 
   const firstPerson = easedBlend > 0.28;
   cat.update(dt, input, collisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw, curve);
+  footsteps.update(dt, cat);
   checkZones();
   applyCamera();
 
@@ -241,6 +253,8 @@ function animate() {
   animateFloatingText(floatingText, elapsed, cat.position, camera, dt);
   animatePathArrows(pathArrows, elapsed);
   animateFountain(terminiGroup, elapsed);
+
+  sky.position.set(cat.position.x, 0, cat.position.z);
 
   renderer.render(scene, camera);
 }

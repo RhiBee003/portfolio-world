@@ -158,6 +158,7 @@ export function createResumePdfPage(phaseSeed, pdfUrl = RESUME_PDF_SRC) {
   group.userData.phase = phaseSeed;
   group.userData.freq = 0.38;
   group.userData.drift = 0.018;
+  group.userData.fadeLevel = 0;
 
   loadResumePdfTexture(pdfUrl)
     .then(({ texture, aspect }) => {
