@@ -11,7 +11,7 @@ const FONT =
 const FLOATING_TEXT_COLOR = "#000000";
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.19;
-const GLOW_MAX_OPACITY = 0.55;
+const GLOW_MAX_OPACITY = 0.72;
 const TEXT_SHOW_THRESHOLD = 0.065;
 const LOOK_DOT_START = 0.58;
 const LOOK_DOT_FULL = 0.9;
@@ -156,7 +156,7 @@ function createGlowTexture(text, options = {}) {
   ctx.drawImage(mask, bleed, bleed);
   ctx.filter = "none";
   ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = "rgba(255, 240, 246, 0.82)";
+  ctx.fillStyle = "rgba(255, 248, 252, 0.96)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.globalCompositeOperation = "source-over";
 
@@ -601,7 +601,7 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
 
     const showText = showLabels;
     const lookFactor = lookAtPanelFactor(camera, panel);
-    const glowTarget = Math.max(lookFactor, showText ? textProximity * 0.45 : 0);
+    const glowTarget = Math.max(lookFactor, showText ? textProximity * 0.55 : 0);
     panel.userData.glowLevel = THREE.MathUtils.lerp(
       panel.userData.glowLevel ?? 0,
       glowTarget,

@@ -18,7 +18,8 @@ export const RESUME_FLOAT_SECTIONS = [
     y: 12.6,
   },
   {
-    text: "Creative developer & designer building polished digital experiences from concept to launch.",
+    text:
+      "Software developer and technical support professional building full-stack web apps, troubleshooting macOS environments, and shipping solutions for small businesses.",
     fontSize: 16,
     fontWeight: 500,
     worldWidth: 8.2,
@@ -36,7 +37,7 @@ export const RESUME_FLOAT_SECTIONS = [
   {
     text:
       "TechProven — IT Support & Software Developer\n" +
-      "Build and maintain full-stack web applications with Rust, JavaScript, Vue, and HTML/CSS. Diagnose software issues, support macOS environments, and deliver reliable fixes.",
+      "Build and maintain web applications with Rust, JavaScript, HTML, CSS, and Vue. Diagnose software issues, support macOS users, and deliver reliable fixes remotely.",
     fontSize: 14,
     fontWeight: 500,
     worldWidth: 8.8,
@@ -47,7 +48,7 @@ export const RESUME_FLOAT_SECTIONS = [
   {
     text:
       "RB Entertainment — Founder\n" +
-      "Own digital infrastructure — websites, scheduling, contracts, and invoicing. Troubleshoot under pressure during live events and streamline operations through automation.",
+      "Design and maintain company websites and digital infrastructure. Manage scheduling, contracts, invoicing, and live-event technical support.",
     fontSize: 14,
     fontWeight: 500,
     worldWidth: 8.8,
@@ -64,7 +65,7 @@ export const RESUME_FLOAT_SECTIONS = [
     y: 3.2,
   },
   {
-    text: "JavaScript · Vue · Rust · HTML/CSS · UI/UX · Git · macOS support · Full-stack delivery",
+    text: "Rust · JavaScript · Python · HTML/CSS · Vue · Git · SQLite · Figma · macOS",
     fontSize: 14,
     fontWeight: 500,
     worldWidth: 8.6,
@@ -77,6 +78,6 @@ export const RESUME_ZONE = {
   tag: "Resume",
   title: "Resume",
   body:
-    "Highlights from my background in IT support and full-stack development. The full timeline floats beside the path — open the PDF for every detail.",
+    "Software developer and IT support background — full-stack apps, macOS troubleshooting, and founder experience. Open the PDF for projects, education, and full detail.",
   links: [{ label: "View full resume (PDF)", href: RESUME_PDF_HREF }],
 };
