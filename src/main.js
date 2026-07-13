@@ -62,7 +62,7 @@ const spawnTangent = curve.getTangentAt(spawnT).normalize();
 
 cat.position.set(spawnRing.x, 0, spawnRing.z);
 const roadFacing = Math.atan2(spawnTangent.x, spawnTangent.z);
-viewYaw = roadFacing + 0.38;
+let viewYaw = roadFacing + 0.38;
 cat.facing = viewYaw + Math.PI;
 cat.cat.rotation.y = cat.facing;
 let fpBlend = 0;
