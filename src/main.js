@@ -119,15 +119,19 @@ const eyeLookAt = new THREE.Vector3();
 const cameraScratch = new THREE.Vector3();
 
 function getFrameSize() {
-  // Prefer the full layout frame (100lvh) so graphics fill under browser chrome.
-  const app = document.getElementById("app");
+  const vv = window.visualViewport;
   const width = Math.max(
     1,
-    Math.round(app?.clientWidth || canvas.clientWidth || document.documentElement.clientWidth || window.innerWidth)
+    Math.round(window.innerWidth || 0),
+    Math.round(document.documentElement.clientWidth || 0),
+    Math.round(vv?.width || 0)
   );
   const height = Math.max(
     1,
-    Math.round(app?.clientHeight || canvas.clientHeight || document.documentElement.clientHeight || window.innerHeight)
+    Math.round(window.innerHeight || 0),
+    Math.round(document.documentElement.clientHeight || 0),
+    Math.round(vv ? vv.height + vv.offsetTop : 0),
+    Math.round(vv?.height || 0)
   );
   return { width, height };
 }
@@ -137,8 +141,13 @@ function syncFrameSize() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height, false);
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
+  canvas.style.position = "fixed";
+  canvas.style.top = "0px";
+  canvas.style.left = "0px";
+  canvas.style.right = "0px";
+  canvas.style.bottom = "0px";
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
   resizeSky(sky);
 }
 
@@ -454,9 +463,10 @@ window.addEventListener("orientationchange", () => {
   requestAnimationFrame(syncFrameSize);
 });
 if (window.visualViewport) {
-  // Keep filling the full layout frame even when the browser chrome resizes the visual viewport.
   window.visualViewport.addEventListener("resize", syncFrameSize);
+  window.visualViewport.addEventListener("scroll", syncFrameSize);
 }
+document.addEventListener("fullscreenchange", syncFrameSize);
 
 syncFrameSize();
 
@@ -510,6 +520,10 @@ function boot() {
     started = true;
     input.setControlMode(mode);
     if (modeSelect) modeSelect.hidden = true;
+    syncFrameSize();
+    if (mode === "mobile") {
+      document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+    }
     bioBar?.playEntrance();
     animate();
   }
