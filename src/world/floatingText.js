@@ -351,6 +351,37 @@ function createUnderline(width) {
   return line;
 }
 
+function createInfoCardBackground({ width, topY, bottomY, padX = 0.4, padY = 0.45, phase = 0 }) {
+  const height = topY - bottomY + padY * 2;
+  const centerY = (topY + bottomY) / 2;
+  const group = new THREE.Group();
+
+  const card = new THREE.Mesh(
+    new THREE.PlaneGeometry(width + padX, height),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      fog: false,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  card.renderOrder = 6;
+  card.position.z = -0.05;
+
+  group.add(card);
+  group.position.y = centerY;
+  group.userData.baseY = centerY;
+  group.userData.cardMesh = card;
+  group.userData.phase = phase;
+  group.userData.freq = 0.38;
+  group.userData.drift = 0.018;
+  return group;
+}
+
 function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, buildText, options = {}) {
   const ringTOffset = options.ringTOffset ?? RING_T_OFFSET;
   const ringT = THREE.MathUtils.clamp(triggerT + ringTOffset, 0.02, 0.98);
@@ -501,6 +532,17 @@ export function createPathFloatingLabels(curve) {
       stop.userData.pageBack = pageBack;
     }
 
+    if (wp.id === "about") {
+      const infoCard = createInfoCardBackground({
+        width: 8.8,
+        topY: 5.45,
+        bottomY: -0.2,
+        phase: index * 0.8,
+      });
+      stop.userData.infoCard = infoCard;
+      stop.userData.textGroup.add(infoCard);
+    }
+
     const previewConfig = PROJECT_PREVIEWS[wp.id];
     if (previewConfig) {
       const preview = createPreviewPanel(previewConfig, index * 0.8 + 0.25);
@@ -565,6 +607,14 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
     imageMesh.material.opacity = showLabels ? 1 : 0;
     preview.visible = showLabels;
   });
+
+  if (stop.userData.infoCard) {
+    const infoCard = stop.userData.infoCard;
+    const { baseY, phase, freq, drift, cardMesh } = infoCard.userData;
+    infoCard.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
+    cardMesh.material.opacity = showLabels ? 0.98 : 0;
+    infoCard.visible = showLabels;
+  }
 
   if (stop.userData.pageBack) {
     const pageBack = stop.userData.pageBack;
