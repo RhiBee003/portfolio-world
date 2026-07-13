@@ -474,7 +474,7 @@ export function createPathFloatingLabels(curve) {
           const titlePanel = createTextPanel(wp.title, {
             fontSize: 30,
             fontWeight: 600,
-            color: FLOATING_TEXT_COLOR,
+            color: PROJECT_TEXT_COLOR,
             worldWidth: 6,
             maxWidth: 420,
             y: 4.8,
@@ -489,13 +489,12 @@ export function createPathFloatingLabels(curve) {
 
           (wp.floatLinks ?? []).forEach((link, linkIndex) => {
             const linkPanel = createTextPanel(link.text, {
-              fontSize: 22,
+              fontSize: 16,
               fontWeight: 500,
-              color: FLOATING_TEXT_COLOR,
-              worldWidth: 5.2,
-              maxWidth: 380,
+              color: PROJECT_TEXT_COLOR,
+              worldWidth: 4.2,
+              maxWidth: 320,
               y: link.y,
-              isLink: true,
               href: link.href,
               phase: index * 0.8 + (linkIndex + 1) * 0.25,
               freq: 0.42,
