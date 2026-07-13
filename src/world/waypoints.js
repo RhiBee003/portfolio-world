@@ -65,7 +65,7 @@ export const WAYPOINTS = [
     title: "Background",
     body: "IT support and software developer from Seattle, WA. I ship polished web experiences end to end.",
     links: [
-      { label: "LinkedIn", href: "https://www.linkedin.com/feed/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/rhiannon-black-3b8b4124a/" },
       { label: "GitHub", href: "https://github.com/RhiBee003" },
     ],
     floatSections: [
@@ -112,9 +112,11 @@ export const WAYPOINTS = [
     body: "Interested in collaborating? Reach out anytime.",
     links: [
       { label: "Email me", href: "mailto:rhibee003@gmail.com" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/rhiannon-black-3b8b4124a/" },
       { label: "GitHub", href: "https://github.com/RhiBee003" },
     ],
     floatLinks: [
+      { text: "LinkedIn", href: "https://www.linkedin.com/in/rhiannon-black-3b8b4124a/", y: 4.55 },
       { text: "GitHub", href: "https://github.com/RhiBee003", y: 3.35 },
       { text: "Email me", href: "mailto:rhibee003@gmail.com", y: 2.15 },
     ],
