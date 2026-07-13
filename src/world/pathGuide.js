@@ -33,7 +33,7 @@ function createArrowMaterial() {
 
 export function createPathArrows(curve) {
   const group = new THREE.Group();
-  const step = 4.2;
+  const step = 8;
   const length = curve.getLength();
   const count = Math.floor(length / step);
 
