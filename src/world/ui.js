@@ -419,14 +419,19 @@ export function createInput(canvas, options = {}) {
     if (!state.touchMode) unlockCursor();
   });
 
-  // Mobile: drag anywhere on canvas to move; tap / double-tap for actions.
+  // Mobile: left half = look / perspective, right half = move.
   let movePointerId = null;
+  let lookPointerId = null;
   let moveOriginX = 0;
   let moveOriginY = 0;
   let moveDragged = false;
+  let lookLastX = 0;
+  let lookLastY = 0;
+  let lookDragged = false;
   const MOVE_RADIUS = 72;
   const TAP_SLOP = 14;
   const DOUBLE_TAP_MS = 340;
+  const touchLookSensitivity = 0.004;
 
   function uiBlocksTouch(target) {
     return Boolean(
@@ -434,6 +439,10 @@ export function createInput(canvas, options = {}) {
         ".ui-dock, .controls-key, .zone-panel, .bio-bar, .mode-select, .loading, button, a"
       )
     );
+  }
+
+  function isLeftHalf(clientX) {
+    return clientX < window.innerWidth * 0.5;
   }
 
   function setTouchStickFromOffset(dx, dy) {
@@ -471,8 +480,22 @@ export function createInput(canvas, options = {}) {
     (e) => {
       if (!state.touchMode) return;
       if (uiBlocksTouch(e.target)) return;
-      if (movePointerId !== null) return;
       e.preventDefault();
+
+      if (isLeftHalf(e.clientX)) {
+        if (lookPointerId !== null) return;
+        lookPointerId = e.pointerId;
+        lookLastX = e.clientX;
+        lookLastY = e.clientY;
+        lookDragged = false;
+        state.lookEngaged = true;
+        setCursorMode("look");
+        options.onEngageView?.();
+        canvas.setPointerCapture?.(e.pointerId);
+        return;
+      }
+
+      if (movePointerId !== null) return;
       movePointerId = e.pointerId;
       moveOriginX = e.clientX;
       moveOriginY = e.clientY;
@@ -485,7 +508,24 @@ export function createInput(canvas, options = {}) {
   canvas.addEventListener(
     "pointermove",
     (e) => {
-      if (e.pointerId !== movePointerId || !state.touchMode) return;
+      if (!state.touchMode) return;
+
+      if (e.pointerId === lookPointerId) {
+        const dx = e.clientX - lookLastX;
+        const dy = e.clientY - lookLastY;
+        lookLastX = e.clientX;
+        lookLastY = e.clientY;
+        if (!lookDragged && Math.hypot(dx, dy) > TAP_SLOP) {
+          lookDragged = true;
+        }
+        if (!lookDragged) return;
+        e.preventDefault();
+        state.lookX += dx * touchLookSensitivity;
+        state.lookY += dy * touchLookSensitivity;
+        return;
+      }
+
+      if (e.pointerId !== movePointerId) return;
       const dx = e.clientX - moveOriginX;
       const dy = e.clientY - moveOriginY;
       if (!moveDragged && Math.hypot(dx, dy) > TAP_SLOP) {
@@ -499,6 +539,18 @@ export function createInput(canvas, options = {}) {
   );
 
   const endMobilePointer = (e) => {
+    if (e.pointerId === lookPointerId) {
+      const wasDrag = lookDragged;
+      const x = e.clientX;
+      const y = e.clientY;
+      lookPointerId = null;
+      lookDragged = false;
+      if (!wasDrag && state.touchMode) {
+        handleMobileTap(x, y);
+      }
+      return;
+    }
+
     if (e.pointerId !== movePointerId) return;
     const wasDrag = moveDragged;
     const x = e.clientX;
@@ -527,7 +579,8 @@ export function createInput(canvas, options = {}) {
   state.lockCursor = lockCursor;
   state.unlockCursor = unlockCursor;
   state.toggleCursorLock = toggleCursorLock;
-  state.isLookActive = () => state.pointerLocked || state.lookEngaged;
+  state.isTouchLooking = () => lookPointerId !== null;
+  state.isLookActive = () => state.pointerLocked || state.lookEngaged || lookPointerId !== null;
 
   setCursorMode("free");
   return state;

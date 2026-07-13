@@ -360,8 +360,8 @@ function animate() {
       getGroundY,
       maxStepUp: onNeedleStairs ? 0.2 : inNeedle ? 0.65 : onRail ? 0.22 : 0.42,
     });
-    if (input.touchMode && cat.wantsMove(input) && !firstPerson) {
-      // Keep the camera behind the cat while dragging.
+    if (input.touchMode && cat.wantsMove(input) && !firstPerson && !input.isTouchLooking?.()) {
+      // Keep the camera behind the cat while dragging, unless looking with left thumb.
       viewYaw = lerpAngle(viewYaw, cat.facing + Math.PI, 1 - Math.exp(-4 * dt));
     }
     checkZones();
