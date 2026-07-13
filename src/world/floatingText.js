@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { RESUME_FLOAT_SECTIONS } from "./resume.js";
-import { PROJECT_PREVIEWS, createWhiskerwatchPreviewTexture } from "./projectPreviews.js";
+import { PROJECT_PREVIEWS } from "./projectPreviews.js";
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -215,7 +215,7 @@ function createTextPanel(text, options = {}) {
 }
 
 function createPreviewPanel(previewConfig, phaseSeed) {
-  const { worldWidth, y, aspect, src, procedural } = previewConfig;
+  const { worldWidth, y, aspect, src } = previewConfig;
   const worldHeight = worldWidth / aspect;
   const pad = 0.16;
   const group = new THREE.Group();
@@ -249,19 +249,12 @@ function createPreviewPanel(previewConfig, phaseSeed) {
   image.renderOrder = 7;
   image.position.z = 0.01;
 
-  if (procedural === "whiskerwatch") {
-    imageMat.map = createWhiskerwatchPreviewTexture();
-  } else if (src) {
+  if (src) {
     textureLoader.load(
       src,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         imageMat.map = tex;
-        imageMat.needsUpdate = true;
-      },
-      undefined,
-      () => {
-        imageMat.map = createWhiskerwatchPreviewTexture();
         imageMat.needsUpdate = true;
       }
     );
