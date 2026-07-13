@@ -17,13 +17,14 @@ const arrowGeo = new THREE.ShapeGeometry(createArrowShape());
 
 const ARROW_DIM = new THREE.Color(0x6a1f42);
 const ARROW_BRIGHT = new THREE.Color(0xad3568);
+const ARROW_WAVE_SPEED = 1.6;
 const _arrowColor = new THREE.Color();
 
 function createArrowMaterial() {
   return new THREE.MeshBasicMaterial({
     color: ARROW_DIM.clone(),
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.45,
     side: THREE.DoubleSide,
     depthWrite: false,
     fog: false,
@@ -31,11 +32,19 @@ function createArrowMaterial() {
   });
 }
 
+function arrowWaveBrightness(index, progress) {
+  const dist = progress - index;
+  if (dist < 0 || dist >= 1) return 0;
+  const t = 1 - dist;
+  return t * t * (3 - 2 * t);
+}
+
 export function createPathArrows(curve) {
   const group = new THREE.Group();
   const step = 8;
   const length = curve.getLength();
   const count = Math.floor(length / step);
+  let arrowIndex = 0;
 
   for (let i = 1; i < count; i += 1) {
     const t = i / count;
@@ -50,23 +59,26 @@ export function createPathArrows(curve) {
     arrow.scale.set(1.55, 1.55, 1);
     arrow.renderOrder = 2;
     arrow.frustumCulled = false;
-    arrow.userData.phase = i * 0.62;
+    arrow.userData.index = arrowIndex;
+    arrowIndex += 1;
 
     group.add(arrow);
   }
 
+  group.userData.arrowCount = arrowIndex;
   return group;
 }
 
 export function animatePathArrows(group, elapsed) {
-  if (!group) return;
+  if (!group || group.userData.arrowCount < 1) return;
+
+  const progress = (elapsed * ARROW_WAVE_SPEED) % group.userData.arrowCount;
 
   group.children.forEach((arrow) => {
-    const phase = arrow.userData.phase ?? 0;
-    const wave = 0.5 + 0.5 * Math.sin(elapsed * 2.35 + phase);
+    const brightness = arrowWaveBrightness(arrow.userData.index ?? 0, progress);
     const mat = arrow.material;
-    _arrowColor.copy(ARROW_DIM).lerp(ARROW_BRIGHT, wave);
+    _arrowColor.copy(ARROW_DIM).lerp(ARROW_BRIGHT, brightness);
     mat.color.copy(_arrowColor);
-    mat.opacity = 0.58 + wave * 0.42;
+    mat.opacity = 0.42 + brightness * 0.58;
   });
 }
