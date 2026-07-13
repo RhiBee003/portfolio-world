@@ -48,7 +48,6 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), buildingMaterial(tone));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-  mesh.frustumCulled = false;
   building.add(mesh);
 
   addBuildingWindows(building, w, d, h, Math.round(x * 19 + z * 37 + h * 3));
@@ -61,12 +60,10 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
         buildingMaterial("dark")
       );
       band.position.y = b * 2.2 - h / 2;
-      band.frustumCulled = false;
       building.add(band);
     }
   }
 
-  building.frustumCulled = false;
   group.add(building);
 
   pushCollision(collisions, x, z, w, d, h, rotY);
@@ -119,6 +116,37 @@ function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
   }
 }
 
+function createPathFlankBuildings(group, collisions, curve, rand) {
+  const step = 0.042;
+
+  for (let t = 0.08; t <= 0.93; t += step) {
+    if (t < START_OVERPASS_T + 0.05) continue;
+
+    const center = curve.getPointAt(t);
+    const tangent = curve.getTangentAt(t).normalize();
+    const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+    const yaw = Math.atan2(tangent.x, tangent.z);
+
+    for (const side of [-1, 1]) {
+      const offset = 7.2 + rand() * 2.8;
+      const x = center.x + normal.x * offset * side;
+      const z = center.z + normal.z * offset * side;
+
+      const needleDx = x - SPACE_NEEDLE_POSITION.x;
+      const needleDz = z - SPACE_NEEDLE_POSITION.z;
+      if (needleDx * needleDx + needleDz * needleDz < 16 * 16) continue;
+
+      const w = 4.2 + rand() * 3.2;
+      const d = 4 + rand() * 2.8;
+      const h = 13 + rand() * 13;
+      const tone = rand() > 0.42 ? "dark" : rand() > 0.5 ? "mid" : "light";
+      const rotY = yaw + (rand() - 0.5) * 0.28;
+
+      addBuilding(group, collisions, x, z, w, d, h, rotY, tone);
+    }
+  }
+}
+
 function placeWestOverpassBuilding(curve, group, collisions) {
   const start = curve.getPointAt(START_OVERPASS_T);
   const tangent = curve.getTangentAt(START_OVERPASS_T).normalize();
@@ -142,6 +170,7 @@ export function createCity(curve) {
   const bounds = CITY.bounds;
 
   createPerimeterBuildings(group, collisions, curve, bounds, seededRandom(7));
+  createPathFlankBuildings(group, collisions, curve, seededRandom(19));
 
   let placed = 0;
   let attempts = 0;

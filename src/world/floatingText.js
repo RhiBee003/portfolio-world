@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
-import { createResumePdfPage } from "./resumePage.js";
+import { createResumePdfPage, ensureResumePdfLoaded } from "./resumePage.js";
 import { PROJECT_PREVIEWS } from "./projectPreviews.js";
 
 const textureLoader = new THREE.TextureLoader();
@@ -737,6 +737,14 @@ export function animateFloatingText(group, elapsed, catPosition, camera, dt = 0.
     if (ringProximity > 0.12) {
       textProximity = Math.max(textProximity, ringPathFade * ringProximity);
     }
+
+    if (stop.userData.pageBack) {
+      const resumeAhead = (stop.userData.pathT ?? 0) - catPathT;
+      if (resumeAhead < 0.28) {
+        ensureResumePdfLoaded(stop.userData.pageBack);
+      }
+    }
+
     applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt);
   });
 }

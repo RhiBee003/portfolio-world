@@ -13,7 +13,7 @@ export function createSunLighting(scene) {
   const sun = new THREE.DirectionalLight(0xffffff, 1.15);
   sun.position.copy(SUN_DIRECTION).multiplyScalar(80);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.near = 1;
   sun.shadow.camera.far = 200;
   sun.shadow.camera.left = -60;
@@ -72,8 +72,8 @@ export function windowMaterialLit() {
   if (!windowLitMaterial) {
     windowLitMaterial = new THREE.MeshStandardMaterial({
       color: 0xfff4dc,
-      emissive: 0xffe4b8,
-      emissiveIntensity: 0.42,
+      emissive: 0xffe8c0,
+      emissiveIntensity: 0.52,
       roughness: 0.35,
       metalness: 0.06,
     });

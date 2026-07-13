@@ -19,7 +19,7 @@ function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
 }
 
 function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) {
-  const isBuilding = collide && h >= 6 && w >= 3 && d >= 3;
+  const isBuilding = collide && h >= 4.5 && w >= 2.5 && d >= 2.5;
 
   if (isBuilding) {
     const building = new THREE.Group();

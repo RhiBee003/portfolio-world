@@ -1,9 +1,20 @@
 import * as THREE from "three";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { RESUME_PDF_SRC } from "./resume.js";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+let pdfLoaderPromise = null;
+
+async function getPdfLib() {
+  if (!pdfLoaderPromise) {
+    pdfLoaderPromise = Promise.all([
+      import("pdfjs-dist"),
+      import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
+    ]).then(([pdfjsLib, workerModule]) => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default;
+      return pdfjsLib;
+    });
+  }
+  return pdfLoaderPromise;
+}
 
 const RESUME_PAGE_ASPECT = 612 / 792;
 /** ~perimeter building height (16–28) with a little extra for readability at cat level */
@@ -74,6 +85,7 @@ function resizeResumeMeshes(group, pageWidth, aspect) {
 }
 
 export async function loadResumePdfTexture(pdfUrl = RESUME_PDF_SRC) {
+  const pdfjsLib = await getPdfLib();
   const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
   const page = await pdf.getPage(1);
   const viewport = page.getViewport({ scale: 4 });
@@ -159,16 +171,25 @@ export function createResumePdfPage(phaseSeed, pdfUrl = RESUME_PDF_SRC) {
   group.userData.freq = 0.38;
   group.userData.drift = 0.018;
   group.userData.fadeLevel = 0;
+  group.userData.pageWidth = pageWidth;
+  group.userData.pdfUrl = pdfUrl;
 
+  return group;
+}
+
+export function ensureResumePdfLoaded(group, pdfUrl = group.userData.pdfUrl ?? RESUME_PDF_SRC) {
+  if (group.userData.pdfLoadStarted) return;
+  group.userData.pdfLoadStarted = true;
+
+  const { pageMesh, pageWidth } = group.userData;
   loadResumePdfTexture(pdfUrl)
     .then(({ texture, aspect }) => {
-      page.material.map = texture;
-      page.material.needsUpdate = true;
+      pageMesh.material.map = texture;
+      pageMesh.material.needsUpdate = true;
       resizeResumeMeshes(group, pageWidth, aspect);
     })
     .catch((err) => {
       console.error("Failed to load resume PDF texture", err);
+      group.userData.pdfLoadStarted = false;
     });
-
-  return group;
 }

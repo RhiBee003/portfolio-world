@@ -1,5 +1,12 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { windowMaterialDark, windowMaterialLit } from "./materials.js";
+
+const _matrix = new THREE.Matrix4();
+const _position = new THREE.Vector3();
+const _quaternion = new THREE.Quaternion();
+const _scale = new THREE.Vector3(1, 1, 1);
+const _euler = new THREE.Euler();
 
 function seededRandom(seed) {
   let s = seed;
@@ -7,6 +14,16 @@ function seededRandom(seed) {
     s = (s * 16807 + 0) % 2147483647;
     return (s - 1) / 2147483646;
   };
+}
+
+function addMergedWindows(parent, geometries, material) {
+  if (!geometries.length) return;
+  const merged = mergeGeometries(geometries, false);
+  geometries.forEach((geometry) => geometry.dispose());
+  const mesh = new THREE.Mesh(merged, material);
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  parent.add(mesh);
 }
 
 function addWindowFace(parent, faceWidth, faceDepth, h, axis, sign, rand) {
@@ -21,33 +38,40 @@ function addWindowFace(parent, faceWidth, faceDepth, h, axis, sign, rand) {
   const totalW = cols * winW + (cols - 1) * gapX;
   const startU = -totalW / 2 + winW / 2;
   const startY = -h / 2 + 1.1 + winH / 2;
-  const litMat = windowMaterialLit();
-  const darkMat = windowMaterialDark();
+  const litGeometries = [];
+  const darkGeometries = [];
 
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
       const u = startU + col * (winW + gapX);
       const y = startY + row * (winH + gapY);
-      const windowMesh = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), rand() > 0.48 ? litMat : darkMat);
-      windowMesh.frustumCulled = false;
-      windowMesh.castShadow = false;
-      windowMesh.receiveShadow = false;
+      const geometry = new THREE.PlaneGeometry(winW, winH);
 
       if (axis === "z") {
-        windowMesh.position.set(u, y, sign * (faceDepth / 2 + inset));
-        if (sign < 0) windowMesh.rotation.y = Math.PI;
+        _position.set(u, y, sign * (faceDepth / 2 + inset));
+        _euler.set(0, sign < 0 ? Math.PI : 0, 0);
       } else {
-        windowMesh.position.set(sign * (faceDepth / 2 + inset), y, u);
-        windowMesh.rotation.y = sign > 0 ? Math.PI / 2 : -Math.PI / 2;
+        _position.set(sign * (faceDepth / 2 + inset), y, u);
+        _euler.set(0, sign > 0 ? Math.PI / 2 : -Math.PI / 2, 0);
       }
 
-      parent.add(windowMesh);
+      _quaternion.setFromEuler(_euler);
+      _matrix.compose(_position, _quaternion, _scale);
+      geometry.applyMatrix4(_matrix);
+
+      const scatter = rand();
+      const litChance = 0.38 + ((row * 17 + col * 31) % 13) * 0.01;
+      if (scatter > litChance) litGeometries.push(geometry);
+      else darkGeometries.push(geometry);
     }
   }
+
+  addMergedWindows(parent, litGeometries, windowMaterialLit());
+  addMergedWindows(parent, darkGeometries, windowMaterialDark());
 }
 
 export function addBuildingWindows(parent, w, d, h, seed = 1) {
-  if (h < 4.5 || w < 2 || d < 2) return;
+  if (h < 3.5 || w < 1.8 || d < 1.8) return;
 
   const rand = seededRandom(seed);
   addWindowFace(parent, w, d, h, "z", 1, rand);

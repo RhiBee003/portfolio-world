@@ -3,7 +3,7 @@ import * as THREE from "three";
 const SKY_GREY = new THREE.Color(0x94949c);
 const SKY_PINK = new THREE.Color(0xefc4d6);
 const SKY_RADIUS = 500;
-const STAR_COUNT = 900;
+const STAR_COUNT = 520;
 const STAR_RADIUS = SKY_RADIUS * 0.98;
 const MOON_DISTANCE = SKY_RADIUS * 0.84;
 
