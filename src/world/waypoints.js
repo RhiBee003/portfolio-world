@@ -80,6 +80,11 @@ export const WAYPOINTS = [
     body: "Interested in collaborating? Reach out anytime.",
     links: [
       { label: "Email me", href: "mailto:rhiblack0017@gmail.com" },
+      { label: "GitHub", href: "https://github.com/RhiBee003" },
+    ],
+    floatLinks: [
+      { text: "GitHub", href: "https://github.com/RhiBee003", y: 3.35 },
+      { text: "Email me", href: "mailto:rhiblack0017@gmail.com", y: 2.15 },
     ],
     pathT: 0.84,
     side: 1,

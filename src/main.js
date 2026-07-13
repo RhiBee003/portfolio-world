@@ -7,7 +7,7 @@ import { createCat, CatController } from "./world/cat.js";
 import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointRingT } from "./world/waypoints.js";
 import { closestPathT } from "./world/pathLayout.js";
 import { createZoneUI, createInput, createBioBar } from "./world/ui.js";
-import { createPathFloatingLabels, animateFloatingText } from "./world/floatingText.js";
+import { createPathFloatingLabels, animateFloatingText, pickFloatingLink } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 
 const canvas = document.getElementById("world-canvas");
@@ -74,7 +74,19 @@ let input;
 const zoneUI = createZoneUI();
 const bioBar = createBioBar();
 
-input = createInput(canvas);
+input = createInput(canvas, {
+  onCanvasClick(e) {
+    if (input.pointerLocked) return false;
+    const href = pickFloatingLink(floatingText, camera, e.clientX, e.clientY, canvas);
+    if (!href) return false;
+    if (href.startsWith("mailto:")) {
+      window.location.href = href;
+    } else {
+      window.open(href, "_blank", "noopener noreferrer");
+    }
+    return true;
+  },
+});
 
 const orbitDistance = 10.5;
 const orbitHeight = 4.8;

@@ -106,6 +106,15 @@ function createTextTexture(text, options = {}) {
   lines.forEach((line, index) => {
     const y = padding + lineHeight * index + lineHeight / 2;
     ctx.fillText(line, canvas.width / 2, y);
+    if (options.isLink) {
+      const lineWidth = ctx.measureText(line).width;
+      ctx.fillRect(
+        canvas.width / 2 - lineWidth / 2,
+        y + fontSize * 0.42,
+        lineWidth,
+        Math.max(2, fontSize * 0.07)
+      );
+    }
   });
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -240,6 +249,7 @@ function createTextPanel(text, options = {}) {
   panel.userData.glowLevel = 0;
   panel.userData.glowMaxOpacity = options.glowMaxOpacity ?? 1;
   panel.userData.glowProximity = options.glowProximity ?? 0.55;
+  panel.userData.href = options.href ?? null;
   panel.userData.baseY = options.y ?? 4;
   panel.userData.phase = options.phase ?? 0;
   panel.userData.freq = options.freq ?? 0.7;
@@ -418,6 +428,45 @@ export function createPathFloatingLabels(curve) {
 
         if (wp.id === "resume") return;
 
+        if (wp.id === "contact") {
+          const titlePanel = createTextPanel(wp.title, {
+            fontSize: 30,
+            fontWeight: 600,
+            color: FLOATING_TEXT_COLOR,
+            worldWidth: 6,
+            maxWidth: 420,
+            y: 4.8,
+            phase: index * 0.8,
+            freq: 0.45,
+            drift: 0.03,
+          });
+          titlePanel.position.y = 4.8;
+          titlePanel.userData.baseY = 4.8;
+          panels.push(titlePanel);
+          textGroup.add(titlePanel);
+
+          (wp.floatLinks ?? []).forEach((link, linkIndex) => {
+            const linkPanel = createTextPanel(link.text, {
+              fontSize: 22,
+              fontWeight: 500,
+              color: FLOATING_TEXT_COLOR,
+              worldWidth: 5.2,
+              maxWidth: 380,
+              y: link.y,
+              isLink: true,
+              href: link.href,
+              phase: index * 0.8 + (linkIndex + 1) * 0.25,
+              freq: 0.42,
+              drift: 0.025,
+            });
+            linkPanel.position.y = link.y;
+            linkPanel.userData.baseY = link.y;
+            panels.push(linkPanel);
+            textGroup.add(linkPanel);
+          });
+          return;
+        }
+
         const panel = createTextPanel(wp.title, {
           fontSize: 30,
           fontWeight: 600,
@@ -555,6 +604,32 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
   if (stop.userData.textGroup && catPosition) {
     faceGroup(stop.userData.textGroup, catPosition);
   }
+}
+
+const _linkRaycaster = new THREE.Raycaster();
+const _linkPointer = new THREE.Vector2();
+
+export function pickFloatingLink(group, camera, clientX, clientY, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  _linkPointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  _linkPointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  _linkRaycaster.setFromCamera(_linkPointer, camera);
+
+  const targets = [];
+  group.traverse((obj) => {
+    if (obj.userData?.href && obj.userData.textMesh?.visible && obj.userData.textMesh.material.opacity > 0.2) {
+      targets.push(obj.userData.textMesh);
+    }
+  });
+
+  const hits = _linkRaycaster.intersectObjects(targets, false);
+  if (!hits.length) return null;
+
+  let panel = hits[0].object.parent;
+  while (panel && !panel.userData?.href) {
+    panel = panel.parent;
+  }
+  return panel?.userData.href ?? null;
 }
 
 export function animateFloatingText(group, elapsed, catPosition, camera, dt = 0.016) {

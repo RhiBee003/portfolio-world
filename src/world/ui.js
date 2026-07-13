@@ -222,6 +222,7 @@ export function createInput(canvas, options = {}) {
 
   canvas.addEventListener("click", (e) => {
     if (e.button !== 0 || e.target.closest(".zone-panel")) return;
+    if (options.onCanvasClick?.(e)) return;
     toggleCursorLock();
   });
 
