@@ -3,13 +3,13 @@ import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { createResumePdfPage } from "./resumePage.js";
 import { PROJECT_PREVIEWS } from "./projectPreviews.js";
+import { ARROW_BRIGHT_HEX } from "./pathGuide.js";
 
 const textureLoader = new THREE.TextureLoader();
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const FLOATING_TEXT_COLOR = "#000000";
-const PROJECT_TEXT_COLOR = "#a33466";
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.19;
 const GLOW_MAX_OPACITY = 0.72;
@@ -502,7 +502,7 @@ export function createPathFloatingLabels(curve) {
         const titlePanel = createTextPanel(wp.title, {
           fontSize: 30,
           fontWeight: 600,
-          color: PROJECT_PREVIEWS[wp.id] ? PROJECT_TEXT_COLOR : FLOATING_TEXT_COLOR,
+          color: PROJECT_PREVIEWS[wp.id] ? ARROW_BRIGHT_HEX : FLOATING_TEXT_COLOR,
           worldWidth: 6,
           maxWidth: 420,
           y: 4.8,

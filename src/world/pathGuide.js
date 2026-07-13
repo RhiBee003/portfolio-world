@@ -17,6 +17,8 @@ const arrowGeo = new THREE.ShapeGeometry(createArrowShape());
 
 const ARROW_DIM = new THREE.Color(0x6a1f42);
 const ARROW_BRIGHT = new THREE.Color(0xad3568);
+export const ARROW_DIM_HEX = "#6a1f42";
+export const ARROW_BRIGHT_HEX = "#ad3568";
 const ARROW_WAVE_SPEED = 1.6;
 const _arrowColor = new THREE.Color();
 
