@@ -7,9 +7,9 @@ const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const FLOATING_TEXT_COLOR = "#000000";
 /** Path-t distance ahead of the cat where labels begin fading in. */
-const PATH_FADE_RANGE = 0.18;
+const PATH_FADE_RANGE = 0.19;
 const GLOW_MAX_OPACITY = 0.55;
-const TEXT_SHOW_THRESHOLD = 0.07;
+const TEXT_SHOW_THRESHOLD = 0.065;
 const LOOK_DOT_START = 0.58;
 const LOOK_DOT_FULL = 0.9;
 
