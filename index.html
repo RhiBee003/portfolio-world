@@ -12,8 +12,12 @@
     <div id="app">
       <canvas id="world-canvas"></canvas>
 
-      <div class="hud">
-        <div class="hud-brand">Rhiannon Black · Developer</div>
+      <div class="bio-bar" id="bio-bar" aria-live="polite">
+        <button class="bio-collapse" id="bio-collapse" type="button" aria-label="Collapse bio">−</button>
+        <div class="bio-bar-content">
+          <p class="bio-name">Rhiannon Black</p>
+          <p class="bio-text">Creative developer and designer. Follow the trail to explore projects.</p>
+        </div>
       </div>
 
       <aside class="controls-key" id="controls-key" aria-label="Controls">

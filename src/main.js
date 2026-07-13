@@ -5,7 +5,7 @@ import { createCity, createGround, createPathCurve, checkCollision } from "./wor
 import { createRoadTermini, animateFountain } from "./world/roadTermini.js";
 import { createCat, CatController } from "./world/cat.js";
 import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointRingT } from "./world/waypoints.js";
-import { createZoneUI, createInput } from "./world/ui.js";
+import { createZoneUI, createInput, createBioBar } from "./world/ui.js";
 import { createPathFloatingLabels, animateFloatingText } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 
@@ -71,6 +71,7 @@ let viewPitch = -0.14;
 
 let input;
 const zoneUI = createZoneUI();
+const bioBar = createBioBar();
 
 input = createInput(canvas);
 
@@ -228,6 +229,7 @@ requestAnimationFrame(() => {
   applyCamera();
   renderer.render(scene, camera);
   loading.classList.add("is-done");
+  bioBar?.playEntrance();
   animate();
 });
 

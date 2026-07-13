@@ -1,3 +1,35 @@
+export function createBioBar() {
+  const bar = document.getElementById("bio-bar");
+  const collapseBtn = document.getElementById("bio-collapse");
+  if (!bar || !collapseBtn) return;
+
+  function setCollapsed(collapsed) {
+    bar.classList.toggle("is-collapsed", collapsed);
+    collapseBtn.textContent = collapsed ? "+" : "−";
+    collapseBtn.setAttribute("aria-label", collapsed ? "Expand bio" : "Collapse bio");
+  }
+
+  collapseBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!bar.classList.contains("can-resize")) return;
+    setCollapsed(!bar.classList.contains("is-collapsed"));
+  });
+
+  bar.addEventListener("mousedown", (e) => e.stopPropagation());
+  bar.addEventListener("click", (e) => e.stopPropagation());
+
+  bar.addEventListener("animationend", () => {
+    bar.classList.remove("is-rising");
+    bar.classList.add("is-docked", "can-resize");
+  });
+
+  return {
+    playEntrance() {
+      bar.classList.add("is-rising");
+    },
+  };
+}
+
 export function createZoneUI(options = {}) {
   const panel = document.getElementById("zone-panel");
   const closeBtn = document.getElementById("zone-close");
