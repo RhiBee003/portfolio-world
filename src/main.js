@@ -61,12 +61,12 @@ const spawnRing = getWaypointRingPosition(heroWaypoint, curve);
 const spawnTangent = curve.getTangentAt(spawnT).normalize();
 
 cat.position.set(spawnRing.x, 0, spawnRing.z);
-cat.facing = Math.atan2(spawnTangent.x, spawnTangent.z);
+const roadFacing = Math.atan2(spawnTangent.x, spawnTangent.z);
+viewYaw = roadFacing + 0.38;
+cat.facing = viewYaw + Math.PI;
 cat.cat.rotation.y = cat.facing;
-
 let fpBlend = 0;
 let lastZone = null;
-let viewYaw = cat.facing + 0.38;
 let viewPitch = -0.14;
 
 let input;
@@ -211,7 +211,7 @@ function animate() {
   }
 
   const firstPerson = easedBlend > 0.28;
-  cat.update(dt, input, collisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw);
+  cat.update(dt, input, collisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw, curve);
   checkZones();
   applyCamera();
 

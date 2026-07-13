@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { brickMaterial } from "./materials.js";
+import { closestPathT } from "./pathLayout.js";
 
 export function createCat() {
   const cat = new THREE.Group();
@@ -117,9 +118,9 @@ export class CatController {
     return target.copy(this.getEyePosition()).addScaledVector(lookDir, 12);
   }
 
-  update(dt, input, collisions, checkCollision, mode, viewYaw) {
+  update(dt, input, collisions, checkCollision, mode, viewYaw, curve) {
     const wish = new THREE.Vector3();
-    let turning = false;
+    let targetFacing = this.facing;
 
     if (mode === "firstPerson") {
       const forward = new THREE.Vector3(Math.sin(viewYaw), 0, Math.cos(viewYaw)).normalize();
@@ -129,6 +130,25 @@ export class CatController {
       if (input.moveBack) wish.sub(forward);
       if (input.moveRight) wish.add(right);
       if (input.moveLeft) wish.sub(right);
+      targetFacing = viewYaw;
+    } else if (curve) {
+      const pathT = closestPathT(curve, this.position.x, this.position.z);
+      const tangent = curve.getTangentAt(pathT).normalize();
+      const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+      this.roadFacing = Math.atan2(tangent.x, tangent.z);
+
+      if (input.moveForward) wish.add(tangent);
+      if (input.moveBack) wish.sub(tangent);
+      if (input.moveRight) wish.add(normal);
+      if (input.moveLeft) wish.sub(normal);
+
+      if (input.moveForward) {
+        targetFacing = this.roadFacing;
+      } else if (wish.lengthSq() > 0) {
+        targetFacing = Math.atan2(wish.x, wish.z);
+      } else if (viewYaw !== undefined) {
+        targetFacing = viewYaw + Math.PI;
+      }
     } else if (viewYaw !== undefined) {
       const camForward = new THREE.Vector3(Math.sin(viewYaw), 0, Math.cos(viewYaw)).normalize();
       const camRight = new THREE.Vector3().crossVectors(camForward, new THREE.Vector3(0, 1, 0)).normalize();
@@ -137,6 +157,12 @@ export class CatController {
       if (input.moveBack) wish.sub(camForward);
       if (input.moveRight) wish.add(camRight);
       if (input.moveLeft) wish.sub(camRight);
+
+      if (wish.lengthSq() > 0) {
+        targetFacing = Math.atan2(wish.x, wish.z);
+      } else {
+        targetFacing = viewYaw + Math.PI;
+      }
     } else {
       if (input.moveForward) wish.z -= 1;
       if (input.moveBack) wish.z += 1;
@@ -144,21 +170,11 @@ export class CatController {
       if (input.moveRight) wish.x += 1;
     }
 
-    const speed = input.sprint && (wish.lengthSq() > 0 || turning) ? this.sprint : this.speed;
+    const speed = input.sprint && wish.lengthSq() > 0 ? this.sprint : this.speed;
     this.isMoving = false;
 
     if (wish.lengthSq() > 0) {
       wish.normalize();
-
-      if (mode !== "firstPerson") {
-        const facingDir = this.getForward();
-        const backing = facingDir.dot(wish) < -0.2;
-        if (!backing) {
-          const targetFacing = Math.atan2(wish.x, wish.z);
-          this.facing = lerpAngle(this.facing, targetFacing, 1 - Math.exp(-12 * dt));
-        }
-      }
-
       this.walkPhase += dt * (input.sprint ? 14 : 9);
       this.isMoving = true;
 
@@ -171,6 +187,10 @@ export class CatController {
       if (!checkCollision(this.position.x, nextZ, this.radius, collisions)) {
         this.position.z = nextZ;
       }
+    }
+
+    if (mode !== "firstPerson") {
+      this.facing = lerpAngle(this.facing, targetFacing, 1 - Math.exp(-10 * dt));
     }
 
     if (input.jumpQueued && this.grounded) {
