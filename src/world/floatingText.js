@@ -175,6 +175,25 @@ function createTextPanel(text, options = {}) {
   const panel = new THREE.Group();
   const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
   const glowGeometry = new THREE.PlaneGeometry(worldWidth * glowScale, worldHeight * glowScale);
+  const backPadX = options.backgroundPadX ?? 0.28;
+  const backPadY = options.backgroundPadY ?? 0.2;
+
+  const backMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(worldWidth + backPadX, worldHeight + backPadY),
+    new THREE.MeshBasicMaterial({
+      color: 0xfffef9,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      fog: false,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  backMesh.renderOrder = 7;
+  backMesh.frustumCulled = false;
+  backMesh.position.z = -0.03;
 
   const glowMesh = new THREE.Mesh(
     glowGeometry,
@@ -209,10 +228,12 @@ function createTextPanel(text, options = {}) {
   textMesh.renderOrder = 10;
   textMesh.frustumCulled = false;
 
+  panel.add(backMesh);
   panel.add(glowMesh);
   panel.add(textMesh);
   panel.userData.textMesh = textMesh;
   panel.userData.glowMesh = glowMesh;
+  panel.userData.backMesh = backMesh;
   panel.userData.glowLevel = 0;
   panel.userData.glowMaxOpacity = options.glowMaxOpacity ?? 1;
   panel.userData.glowProximity = options.glowProximity ?? 0.55;
@@ -500,10 +521,14 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
   }
 
   stop.userData.panels.forEach((panel) => {
-    const { baseY, phase, freq, drift, textMesh, glowMesh } = panel.userData;
+    const { baseY, phase, freq, drift, textMesh, glowMesh, backMesh } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
 
     const showText = showLabels;
+    if (backMesh) {
+      backMesh.material.opacity = showText ? 0.96 : 0;
+      backMesh.visible = showText;
+    }
     const lookFactor = lookAtPanelFactor(camera, panel);
     const glowTarget = Math.max(
       lookFactor,
