@@ -346,7 +346,7 @@ function createPathRing() {
 
 function createUnderline(width) {
   const line = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, 0.1),
+    new THREE.PlaneGeometry(width, 0.04),
     new THREE.MeshBasicMaterial({
       color: parseInt(UNDERLINE_HEX.slice(1), 16),
       transparent: true,
@@ -606,8 +606,9 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
   const showLabels = textProximity > TEXT_SHOW_THRESHOLD;
 
   if (stop.userData.underline) {
-    stop.userData.underline.material.opacity = textProximity;
-    stop.userData.underline.scale.x = 0.15 + textProximity * 0.85;
+    const proximity = smoothstep(textProximity);
+    stop.userData.underline.material.opacity = proximity;
+    stop.userData.underline.scale.x = 0.04 + proximity * 1.55;
   }
 
   stop.userData.previews.forEach((preview) => {
