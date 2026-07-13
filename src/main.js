@@ -31,7 +31,6 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setClearColor(0xefc4d6);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -113,11 +112,37 @@ const contextHint = createContextHint();
 const orbitDistance = 10.5;
 const orbitHeight = 4.8;
 
-const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 250);
+const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 250);
 const overviewTarget = new THREE.Vector3();
 const eyePosition = new THREE.Vector3();
 const eyeLookAt = new THREE.Vector3();
 const cameraScratch = new THREE.Vector3();
+
+function getFrameSize() {
+  // Prefer the full layout frame (100lvh) so graphics fill under browser chrome.
+  const app = document.getElementById("app");
+  const width = Math.max(
+    1,
+    Math.round(app?.clientWidth || canvas.clientWidth || document.documentElement.clientWidth || window.innerWidth)
+  );
+  const height = Math.max(
+    1,
+    Math.round(app?.clientHeight || canvas.clientHeight || document.documentElement.clientHeight || window.innerHeight)
+  );
+  return { width, height };
+}
+
+function syncFrameSize() {
+  const { width, height } = getFrameSize();
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height, false);
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  resizeSky(sky);
+}
+
+syncFrameSize();
 
 const input = createInput(canvas, {
   onCanvasClick(e) {
@@ -424,19 +449,16 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-window.addEventListener("resize", () => {
-  const width = Math.round(window.visualViewport?.width ?? window.innerWidth);
-  const height = Math.round(window.visualViewport?.height ?? window.innerHeight);
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height, false);
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  resizeSky(sky);
+window.addEventListener("resize", syncFrameSize);
+window.addEventListener("orientationchange", () => {
+  requestAnimationFrame(syncFrameSize);
 });
 if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => window.dispatchEvent(new Event("resize")));
+  // Keep filling the full layout frame even when the browser chrome resizes the visual viewport.
+  window.visualViewport.addEventListener("resize", syncFrameSize);
 }
+
+syncFrameSize();
 
 async function loadWorldContent() {
   setLoadingStatus("Building skyline…");
