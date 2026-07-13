@@ -3,13 +3,23 @@ import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { createResumePdfPage } from "./resumePage.js";
 import { PROJECT_PREVIEWS } from "./projectPreviews.js";
-import { ARROW_DIM_HEX } from "./pathGuide.js";
 
 const textureLoader = new THREE.TextureLoader();
 
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const FLOATING_TEXT_COLOR = "#000000";
+const UNDERLINE_HEX = "#e8a4bc";
+
+function lightenHex(hex, amount) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lift = (channel) => Math.min(255, Math.round(channel + (255 - channel) * amount));
+  return `#${lift(r).toString(16).padStart(2, "0")}${lift(g).toString(16).padStart(2, "0")}${lift(b).toString(16).padStart(2, "0")}`;
+}
+
+const PROJECT_TEXT_COLOR = lightenHex(UNDERLINE_HEX, 0.1);
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.19;
 const GLOW_MAX_OPACITY = 0.72;
@@ -338,7 +348,7 @@ function createUnderline(width) {
   const line = new THREE.Mesh(
     new THREE.PlaneGeometry(width, 0.1),
     new THREE.MeshBasicMaterial({
-      color: 0xe8a4bc,
+      color: parseInt(UNDERLINE_HEX.slice(1), 16),
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -502,7 +512,7 @@ export function createPathFloatingLabels(curve) {
         const titlePanel = createTextPanel(wp.title, {
           fontSize: 30,
           fontWeight: 600,
-          color: PROJECT_PREVIEWS[wp.id] ? ARROW_DIM_HEX : FLOATING_TEXT_COLOR,
+          color: PROJECT_PREVIEWS[wp.id] ? PROJECT_TEXT_COLOR : FLOATING_TEXT_COLOR,
           worldWidth: 6,
           maxWidth: 420,
           y: 4.8,
