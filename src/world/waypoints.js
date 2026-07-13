@@ -63,14 +63,14 @@ export const WAYPOINTS = [
     id: "about",
     tag: "About",
     title: "Background",
-    body: "IT support and software developer. I ship polished web experiences end to end.",
+    body: "IT support and software developer based in Seattle, WA. I ship polished web experiences end to end.",
     links: [
       { label: "LinkedIn", href: "https://www.linkedin.com/feed/" },
       { label: "GitHub", href: "https://github.com/RhiBee003" },
     ],
     floatSections: [
       {
-        text: "IT support and software developer. I ship polished web experiences end to end.",
+        text: "IT support and software developer based in Seattle, WA. I ship polished web experiences end to end.",
         fontSize: 16,
         fontWeight: 500,
         worldWidth: 7.6,
