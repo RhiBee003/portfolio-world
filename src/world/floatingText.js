@@ -20,6 +20,15 @@ function lightenHex(hex, amount) {
 }
 
 const PROJECT_TEXT_COLOR = lightenHex(UNDERLINE_HEX, 0.1);
+const TEXT_RENDER_SCALE = Math.min(3, Math.max(2, typeof window !== "undefined" ? window.devicePixelRatio || 1 : 2));
+
+function configureTextTexture(texture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.anisotropy = 4;
+  return texture;
+}
 /** Path-t distance ahead of the cat where labels begin fading in. */
 const PATH_FADE_RANGE = 0.19;
 const GLOW_MAX_OPACITY = 0.72;
@@ -86,10 +95,11 @@ function wrapLines(ctx, text, maxWidth) {
 }
 
 function createTextTexture(text, options = {}) {
-  const fontSize = options.fontSize ?? 56;
+  const scale = options.renderScale ?? TEXT_RENDER_SCALE;
+  const fontSize = (options.fontSize ?? 56) * scale;
   const fontWeight = options.fontWeight ?? 600;
-  const maxWidth = options.maxWidth ?? 720;
-  const padding = options.padding ?? 28;
+  const maxWidth = (options.maxWidth ?? 720) * scale;
+  const padding = (options.padding ?? 28) * scale;
   const color = options.color ?? FLOATING_TEXT_COLOR;
 
   const measureCanvas = document.createElement("canvas");
@@ -128,16 +138,16 @@ function createTextTexture(text, options = {}) {
     }
   });
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return { texture, width: canvas.width, height: canvas.height };
+  const texture = configureTextTexture(new THREE.CanvasTexture(canvas));
+  return { texture, width: canvas.width / scale, height: canvas.height / scale };
 }
 
 function createGlowTexture(text, options = {}) {
-  const fontSize = options.fontSize ?? 56;
+  const scale = options.renderScale ?? TEXT_RENDER_SCALE;
+  const fontSize = (options.fontSize ?? 56) * scale;
   const fontWeight = options.fontWeight ?? 600;
-  const maxWidth = options.maxWidth ?? 720;
-  const padding = options.padding ?? 28;
+  const maxWidth = (options.maxWidth ?? 720) * scale;
+  const padding = (options.padding ?? 28) * scale;
 
   const measureCanvas = document.createElement("canvas");
   const measureCtx = measureCanvas.getContext("2d");
@@ -180,9 +190,8 @@ function createGlowTexture(text, options = {}) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.globalCompositeOperation = "source-over";
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return { texture, width: canvas.width, height: canvas.height };
+  const texture = configureTextTexture(new THREE.CanvasTexture(canvas));
+  return { texture, width: canvas.width / scale, height: canvas.height / scale };
 }
 
 function createTextPanel(text, options = {}) {
