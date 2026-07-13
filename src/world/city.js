@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { buildingMaterial } from "./materials.js";
+import { addBuildingWindows } from "./buildingWindows.js";
+import { SPACE_NEEDLE_POSITION } from "./spaceNeedle.js";
 import { PATH_POINTS, START_OVERPASS_T } from "./waypoints.js";
 import { WORLD_CONFIG } from "./worldConfig.js";
 
@@ -39,13 +41,17 @@ function pushCollision(collisions, x, z, w, d, h, rotY) {
 }
 
 function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
+  const building = new THREE.Group();
+  building.position.set(x, h / 2, z);
+  building.rotation.y = rotY;
+
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), buildingMaterial(tone));
-  mesh.position.set(x, h / 2, z);
-  mesh.rotation.y = rotY;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.frustumCulled = false;
-  group.add(mesh);
+  building.add(mesh);
+
+  addBuildingWindows(building, w, d, h, Math.round(x * 19 + z * 37 + h * 3));
 
   if (h > 10) {
     const bands = Math.floor(h / 2.4);
@@ -54,12 +60,14 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
         new THREE.BoxGeometry(w * 1.02, 0.14, d * 1.02),
         buildingMaterial("dark")
       );
-      band.position.set(x, b * 2.2, z);
-      band.rotation.y = rotY;
+      band.position.y = b * 2.2 - h / 2;
       band.frustumCulled = false;
-      group.add(band);
+      building.add(band);
     }
   }
+
+  building.frustumCulled = false;
+  group.add(building);
 
   pushCollision(collisions, x, z, w, d, h, rotY);
 }
@@ -67,6 +75,10 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone) {
 function shouldSkipProceduralSpot(x, z) {
   const absX = Math.abs(x);
   const { overpassFlank, startCorridor, midCorridor, endPlaza, overpassExclusion } = CITY;
+
+  const needleDx = x - SPACE_NEEDLE_POSITION.x;
+  const needleDz = z - SPACE_NEEDLE_POSITION.z;
+  if (needleDx * needleDx + needleDz * needleDz < 20 * 20) return true;
 
   if (z > overpassFlank.zMin && z < overpassFlank.zMax && x < overpassFlank.xMax) return true;
   if (z > overpassExclusion.zMin && z < overpassExclusion.zMax && absX > overpassExclusion.absXMin && absX < overpassExclusion.absXMax) {
@@ -85,6 +97,9 @@ function createPerimeterBuildings(group, collisions, curve, bounds, rand) {
   function tryPlace(x, z, rotY) {
     if (distToPath(x, z, curve) < perimeterPathClearance) return false;
     if (z > overpassFlank.zMin && z < overpassFlank.zMax && x < overpassFlank.xMax) return false;
+    const needleDx = x - SPACE_NEEDLE_POSITION.x;
+    const needleDz = z - SPACE_NEEDLE_POSITION.z;
+    if (needleDx * needleDx + needleDz * needleDz < 20 * 20) return false;
     const w = 5 + rand() * 4;
     const d = 5 + rand() * 4;
     const h = 16 + rand() * 12;

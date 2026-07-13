@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { buildingMaterial, brickMaterial } from "./materials.js";
+import { addBuildingWindows } from "./buildingWindows.js";
 import { START_OVERPASS_T } from "./waypoints.js";
 
 function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
@@ -18,6 +19,25 @@ function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
 }
 
 function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) {
+  const isBuilding = collide && h >= 6 && w >= 3 && d >= 3;
+
+  if (isBuilding) {
+    const building = new THREE.Group();
+    building.position.set(x, y + h / 2, z);
+    building.rotation.y = rotY;
+
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+    building.add(mesh);
+    addBuildingWindows(building, w, d, h, Math.round(x * 23 + z * 41 + h * 5));
+    building.frustumCulled = false;
+    group.add(building);
+    pushCollision(collisions, x, z, w, d, h, rotY);
+    return mesh;
+  }
+
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   mesh.position.set(x, y + h / 2, z);
   mesh.rotation.y = rotY;

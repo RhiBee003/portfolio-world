@@ -8,8 +8,9 @@ import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointR
 import { createZoneUI, createInput, createBioBar } from "./world/ui.js";
 import { createPathFloatingLabels, animateFloatingText, pickFloatingLink } from "./world/floatingText.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
-import { createSky } from "./world/sky.js";
+import { createSky, animateSky } from "./world/sky.js";
 import { createFootstepTrail } from "./world/footsteps.js";
+import { addSpaceNeedleToScene } from "./world/spaceNeedle.js";
 
 const canvas = document.getElementById("world-canvas");
 const loading = document.getElementById("loading");
@@ -39,6 +40,8 @@ const { sun } = createSunLighting(scene);
 const curve = createPathCurve();
 const { group: cityGroup, collisions: cityCollisions } = createCity(curve);
 scene.add(cityGroup);
+
+addSpaceNeedleToScene(scene, cityCollisions);
 
 const { group: terminiGroup, collisions: terminiCollisions } = createRoadTermini(curve);
 scene.add(terminiGroup);
@@ -255,6 +258,7 @@ function animate() {
   animateFountain(terminiGroup, elapsed);
 
   sky.position.set(cat.position.x, 0, cat.position.z);
+  animateSky(sky, elapsed);
 
   renderer.render(scene, camera);
 }

@@ -65,6 +65,35 @@ export function buildingMaterial(tone) {
   });
 }
 
+let windowLitMaterial;
+let windowDarkMaterial;
+
+export function windowMaterialLit() {
+  if (!windowLitMaterial) {
+    windowLitMaterial = new THREE.MeshStandardMaterial({
+      color: 0xfff4dc,
+      emissive: 0xffe4b8,
+      emissiveIntensity: 0.42,
+      roughness: 0.35,
+      metalness: 0.06,
+    });
+  }
+  return windowLitMaterial;
+}
+
+export function windowMaterialDark() {
+  if (!windowDarkMaterial) {
+    windowDarkMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1c2230,
+      emissive: 0x080c14,
+      emissiveIntensity: 0.08,
+      roughness: 0.45,
+      metalness: 0.12,
+    });
+  }
+  return windowDarkMaterial;
+}
+
 export function groundMaterial() {
   return new THREE.MeshStandardMaterial({
     color: 0xfafafa,
