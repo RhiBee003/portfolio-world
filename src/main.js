@@ -16,7 +16,7 @@ import { createZoneUI, createInput, createBioBar, createContextHint } from "./wo
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 import { createSky, animateSky, resizeSky } from "./world/sky.js";
 import { animateSkyThankYouMessage } from "./world/skyMessage.js";
-import { createRainfall } from "./world/rain.js";
+import { createRainfall, mountainSnowBlend } from "./world/rain.js";
 import { createLightRail, LightRailController } from "./world/lightRail.js";
 import { createFootstepTrail } from "./world/footsteps.js";
 import { worldHeight } from "./world/terrain.js";
@@ -48,6 +48,10 @@ renderer.toneMappingExposure = 0.92;
 
 const scene = new THREE.Scene();
 const FOG_COLOR = 0xc9b0bd;
+const FOG_SNOW = 0xe4e0e8;
+const fogRain = new THREE.Color(FOG_COLOR);
+const fogSnow = new THREE.Color(FOG_SNOW);
+const fogMixed = new THREE.Color(FOG_COLOR);
 const sceneFog = new THREE.Fog(FOG_COLOR, 42, 160);
 scene.fog = sceneFog;
 
@@ -371,6 +375,14 @@ function applyCamera() {
 
   sceneFog.near = THREE.MathUtils.lerp(38, 48, easedBlend);
   sceneFog.far = THREE.MathUtils.lerp(145, 175, easedBlend);
+
+  const snowBlend = mountainSnowBlend(cat.position.x, cat.position.z);
+  fogMixed.copy(fogRain).lerp(fogSnow, snowBlend);
+  sceneFog.color.copy(fogMixed);
+  // Mountain air clears a little as rain turns to snow.
+  sceneFog.near += snowBlend * 10;
+  sceneFog.far += snowBlend * 28;
+  renderer.setClearColor(fogMixed);
 
   sun.position.set(
     cat.position.x + SUN_DIRECTION.x * 80,

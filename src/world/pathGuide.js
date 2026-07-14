@@ -48,6 +48,8 @@ export function createPathArrows(curve) {
   const length = curve.getLength();
   const count = Math.floor(length / step);
   let arrowIndex = 0;
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
 
   for (let i = 1; i < count; i += 1) {
     const t = i / count;
@@ -55,9 +57,24 @@ export function createPathArrows(curve) {
     const tangent = curve.getTangentAt(t).normalize();
     const yaw = Math.atan2(tangent.x, tangent.z);
 
+    // Sample nearby path height so arrows pitch with the grade.
+    const dt = 0.012;
+    const t0 = THREE.MathUtils.clamp(t - dt, 0, 1);
+    const t1 = THREE.MathUtils.clamp(t + dt, 0, 1);
+    a.copy(curve.getPointAt(t0));
+    b.copy(curve.getPointAt(t1));
+    a.y = pathSurfaceY(a.x, a.z);
+    b.y = pathSurfaceY(b.x, b.z);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dz = b.z - a.z;
+    const horiz = Math.hypot(dx, dz) || 1e-6;
+    const gradePitch = Math.atan2(dy, horiz);
+
     const arrow = new THREE.Mesh(arrowGeo, createArrowMaterial());
     arrow.rotation.order = "YXZ";
-    arrow.rotation.set(-Math.PI / 2, yaw + Math.PI, 0);
+    // Flat on path (-PI/2), then tip follows the hill (+gradePitch; tip faces +tangent).
+    arrow.rotation.set(-Math.PI / 2 + gradePitch, yaw + Math.PI, 0);
     arrow.position.set(center.x, pathSurfaceY(center.x, center.z) + 0.09, center.z);
     arrow.scale.set(1.55, 1.55, 1);
     arrow.renderOrder = 2;

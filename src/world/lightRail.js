@@ -54,9 +54,13 @@ function easeInOut(t) {
   return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
 
+function trackBedY(x, z) {
+  return worldHeight(x, z) + LIGHT_RAIL_TRACK_Y;
+}
+
 function trackPointAt(curve, t) {
   const p = curve.getPointAt(t);
-  return new THREE.Vector3(p.x, LIGHT_RAIL_TRACK_Y, p.z);
+  return new THREE.Vector3(p.x, trackBedY(p.x, p.z), p.z);
 }
 
 function inRect(x, z, rect, margin = 0) {
@@ -75,21 +79,22 @@ function buildGuidewayGeometry(curve, t0, t1, width, segments) {
   const indices = [];
   const left = new THREE.Vector3();
   const right = new THREE.Vector3();
-  const normal = new THREE.Vector3();
+  const side = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
 
   for (let i = 0; i <= segments; i += 1) {
     const t = THREE.MathUtils.lerp(t0, t1, i / segments);
     const point = trackPointAt(curve, t);
-    const tangent = curve.getTangentAt(t).normalize();
-    normal.set(-tangent.z, 0, tangent.x).normalize();
+    const tangentFlat = curve.getTangentAt(t).normalize();
+    side.set(-tangentFlat.z, 0, tangentFlat.x).normalize();
 
-    left.copy(point).addScaledVector(normal, -width / 2);
-    right.copy(point).addScaledVector(normal, width / 2);
-    left.y = LIGHT_RAIL_TRACK_Y - 0.06;
-    right.y = LIGHT_RAIL_TRACK_Y - 0.06;
+    left.copy(point).addScaledVector(side, -width / 2);
+    right.copy(point).addScaledVector(side, width / 2);
+    left.y = point.y - 0.06;
+    right.y = point.y - 0.06;
 
     positions.push(left.x, left.y, left.z, right.x, right.y, right.z);
-    normals.push(0, 1, 0, 0, 1, 0);
+    normals.push(up.x, up.y, up.z, up.x, up.y, up.z);
     uvs.push(0, i / segments, 1, i / segments);
 
     if (i < segments) {
@@ -103,6 +108,7 @@ function buildGuidewayGeometry(curve, t0, t1, width, segments) {
   geometry.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
   geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   return geometry;
 }
 
@@ -316,11 +322,9 @@ function createPlazaCatFlag(facing = 1) {
 function createStation(curve, pathT, label, towardPathX) {
   const group = new THREE.Group();
   group.name = `light-rail-station-${label}`;
-  const center = trackPointAt(curve, pathT);
-  const tangent = curve.getTangentAt(pathT).normalize();
-  const yaw = Math.atan2(tangent.x, tangent.z);
-  const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+  const { point: center, tangent, normal, yaw, pitch } = trackFrameAt(curve, pathT);
   const rampDir = towardPathX < center.x ? -1 : 1;
+  const baseY = worldHeight(center.x, center.z);
 
   const platY = LIGHT_RAIL_PLATFORM_Y;
   const walkY = 0.04;
@@ -347,8 +351,10 @@ function createStation(curve, pathT, label, towardPathX) {
   });
 
   const deck = new THREE.Group();
-  deck.position.set(center.x, 0, center.z);
+  deck.position.set(center.x, baseY, center.z);
+  deck.rotation.order = "YXZ";
   deck.rotation.y = yaw;
+  deck.rotation.x = -pitch;
 
   // Guideway bed under the train (connects visually to main guideway mesh).
   const guidePad = new THREE.Mesh(new THREE.BoxGeometry(LIGHT_RAIL_GUIDEWAY_WIDTH + 0.35, 0.12, platformLen + 1.2), concreteDark);
@@ -562,15 +568,15 @@ function createStation(curve, pathT, label, towardPathX) {
 
   const platformDeckRect = {
     ...localBoxToWorldRect(platX - platformW * 0.5, platX + platformW * 0.5, -platformLen * 0.5, platformLen * 0.5, 0.2),
-    y: platY,
+    y: baseY + platY,
   };
   const plazaRect = {
     ...localBoxToWorldRect(plazaX - plazaW * 0.5, plazaX + plazaW * 0.5, -3.75, 3.75, 0.2),
-    y: walkY,
+    y: baseY + walkY,
   };
   const stairRects = stairStepsLocal.map((step) => ({
     ...localBoxToWorldRect(step.localX0, step.localX1, step.localZ0, step.localZ1, 0.06),
-    y: step.y,
+    y: baseY + step.y,
   }));
 
   // Keep broad AABB for docking checks.
@@ -583,23 +589,25 @@ function createStation(curve, pathT, label, towardPathX) {
   );
 
   group.userData.stationT = pathT;
+  group.userData.baseY = baseY;
   group.userData.glow = glow;
   group.userData.catFlag = catFlag;
   group.userData.center = { x: center.x, z: center.z };
-  group.userData.platformRect = { ...footprint, y: platY };
+  group.userData.platformRect = { ...footprint, y: baseY + platY };
   group.userData.platformDeckRect = platformDeckRect;
   group.userData.plazaRect = plazaRect;
   group.userData.stairRects = stairRects;
   group.userData.rampRect = {
     ...footprint,
-    y0: walkY,
-    y1: platY,
+    y0: baseY + walkY,
+    y1: baseY + platY,
   };
 
   const beacon = createStationBeacon(
     center.x + normal.x * plazaX,
     center.z + normal.z * plazaX
   );
+  beacon.position.y = baseY + 8;
   group.add(beacon);
   group.userData.beacon = beacon;
 
@@ -635,16 +643,18 @@ function carFloorWorldY(train = null) {
     train && train.userData?.passengerActive
       ? LIGHT_RAIL_CAR.passengerFloorY
       : LIGHT_RAIL_CAR.floorY;
-  return LIGHT_RAIL_TRACK_Y + floor * s;
+  const bed = train?.position?.y ?? LIGHT_RAIL_TRACK_Y;
+  return bed + floor * s;
 }
 
 function passengerFeetWorldY(train = null) {
   const s = train?.scale?.y ?? train?.scale?.x ?? 1;
-  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.seat.y * s;
+  const bed = train?.position?.y ?? LIGHT_RAIL_TRACK_Y;
+  return bed + LIGHT_RAIL_CAR.seat.y * s;
 }
 
-function railTopWorldY() {
-  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_RAIL.topAboveBed;
+function railTopWorldY(x = 0, z = 0) {
+  return trackBedY(x, z) + LIGHT_RAIL_RAIL.topAboveBed;
 }
 
 function createSeatUnit(mat, backMat) {
@@ -1163,21 +1173,30 @@ function sampleCurveByArcLength(curve, t0, t1, spacing, divisions = 220) {
 
 function trackFrameAt(curve, t) {
   const point = trackPointAt(curve, t);
-  const tangent = curve.getTangentAt(t).normalize();
-  const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-  const yaw = Math.atan2(tangent.x, tangent.z);
-  return { point, tangent, normal, yaw };
+  const tangentFlat = curve.getTangentAt(t).normalize();
+  const normal = new THREE.Vector3(-tangentFlat.z, 0, tangentFlat.x).normalize();
+  const yaw = Math.atan2(tangentFlat.x, tangentFlat.z);
+
+  const dt = 0.006;
+  const a = trackPointAt(curve, THREE.MathUtils.clamp(t - dt, 0, 1));
+  const b = trackPointAt(curve, THREE.MathUtils.clamp(t + dt, 0, 1));
+  const graded = b.clone().sub(a);
+  const horiz = Math.hypot(graded.x, graded.z) || 1e-6;
+  const pitch = Math.atan2(graded.y, horiz);
+
+  return { point, tangent: tangentFlat, normal, yaw, pitch };
 }
 
 function createCantileverPole(poleBase, trackCenter, wirePoint, poleMat, armMat) {
   const group = new THREE.Group();
-  const poleHeight = wirePoint.y - LIGHT_RAIL_TRACK_Y + 0.55;
+  const bedY = poleBase.y;
+  const poleHeight = wirePoint.y - bedY + 0.55;
   const pole = new THREE.Mesh(
     new THREE.CylinderGeometry(0.07, 0.09, poleHeight, 8),
     poleMat
   );
   pole.position.copy(poleBase);
-  pole.position.y = LIGHT_RAIL_TRACK_Y + poleHeight / 2;
+  pole.position.y = bedY + poleHeight / 2;
   pole.castShadow = true;
   group.add(pole);
 
@@ -1186,7 +1205,7 @@ function createCantileverPole(poleBase, trackCenter, wirePoint, poleMat, armMat)
     armMat
   );
   const braceMid = poleBase.clone().lerp(trackCenter, 0.35);
-  braceMid.y = LIGHT_RAIL_TRACK_Y + poleHeight * 0.42;
+  braceMid.y = bedY + poleHeight * 0.42;
   brace.position.copy(braceMid);
   brace.lookAt(trackCenter.x, braceMid.y + 0.8, trackCenter.z);
   brace.rotateX(Math.PI / 2);
@@ -1228,9 +1247,9 @@ function createOverheadCatenary(curve) {
   for (const sample of poleSamples) {
     const { point, normal } = trackFrameAt(curve, sample.t);
     const poleBase = point.clone().addScaledVector(normal, LIGHT_RAIL_OCS.poleOffset);
-    poleBase.y = LIGHT_RAIL_TRACK_Y;
+    poleBase.y = point.y;
     const wirePoint = point.clone();
-    wirePoint.y = LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_OCS.wireHeight;
+    wirePoint.y = point.y + LIGHT_RAIL_OCS.wireHeight;
     group.add(createCantileverPole(poleBase, point, wirePoint, poleMat, armMat));
   }
 
@@ -1239,11 +1258,12 @@ function createOverheadCatenary(curve) {
     const t = THREE.MathUtils.lerp(usableT0, usableT1, i / messengerDivisions);
     const { point } = trackFrameAt(curve, t);
     const messenger = point.clone();
-    messenger.y = LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_OCS.wireHeight + 0.42;
+    messenger.y = point.y + LIGHT_RAIL_OCS.wireHeight + 0.42;
     if (i > 0) {
       const prevT = THREE.MathUtils.lerp(usableT0, usableT1, (i - 1) / messengerDivisions);
-      const prev = trackFrameAt(curve, prevT).point;
-      prev.y = messenger.y;
+      const prevFrame = trackFrameAt(curve, prevT);
+      const prev = prevFrame.point.clone();
+      prev.y = prev.y + LIGHT_RAIL_OCS.wireHeight + 0.42;
       const span = new THREE.Mesh(
         new THREE.CylinderGeometry(0.018, 0.018, prev.distanceTo(messenger), 4),
         wireMat
@@ -1259,11 +1279,12 @@ function createOverheadCatenary(curve) {
     const t = THREE.MathUtils.lerp(usableT0, usableT1, i / messengerDivisions);
     const { point } = trackFrameAt(curve, t);
     const contact = point.clone();
-    contact.y = LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_OCS.wireHeight;
+    contact.y = point.y + LIGHT_RAIL_OCS.wireHeight;
     if (i > 0) {
       const prevT = THREE.MathUtils.lerp(usableT0, usableT1, (i - 1) / messengerDivisions);
-      const prev = trackFrameAt(curve, prevT).point;
-      prev.y = contact.y;
+      const prevFrame = trackFrameAt(curve, prevT);
+      const prev = prevFrame.point.clone();
+      prev.y = prev.y + LIGHT_RAIL_OCS.wireHeight;
       const span = new THREE.Mesh(
         new THREE.CylinderGeometry(0.028, 0.028, prev.distanceTo(contact), 5),
         wireMat
@@ -1303,13 +1324,10 @@ export function createLightRail() {
   root.add(guideway);
 
   const railMat = new THREE.MeshStandardMaterial({ color: PAL.metal, metalness: 0.5, roughness: 0.42 });
-  const railY = LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_RAIL.topAboveBed - LIGHT_RAIL_RAIL.height / 2;
   for (let i = 0; i <= segments; i += 6) {
     const t = THREE.MathUtils.lerp(LIGHT_RAIL_START_T, LIGHT_RAIL_END_T, i / segments);
-    const point = trackPointAt(curve, t);
-    const tangent = curve.getTangentAt(t).normalize();
-    const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-    const yaw = Math.atan2(tangent.x, tangent.z);
+    const { point, yaw, pitch, normal } = trackFrameAt(curve, t);
+    const railY = point.y + LIGHT_RAIL_RAIL.topAboveBed - LIGHT_RAIL_RAIL.height / 2;
     for (const side of [-LIGHT_RAIL_RAIL.gaugeHalf, LIGHT_RAIL_RAIL.gaugeHalf]) {
       const rail = new THREE.Mesh(
         new THREE.BoxGeometry(0.55, LIGHT_RAIL_RAIL.height, 0.07),
@@ -1320,7 +1338,9 @@ export function createLightRail() {
         railY,
         point.z + normal.z * side
       );
+      rail.rotation.order = "YXZ";
       rail.rotation.y = yaw;
+      rail.rotation.x = -pitch;
       root.add(rail);
     }
   }
@@ -1617,11 +1637,11 @@ export class LightRailController {
 
   positionTrain() {
     const curve = this.system.curve;
-    const { point, yaw } = trackFrameAt(curve, this.pathT);
+    const { point, yaw, pitch } = trackFrameAt(curve, this.pathT);
 
     this.system.train.position.copy(point);
-    this.system.train.position.y = LIGHT_RAIL_TRACK_Y;
-    this.system.train.rotation.set(0, yaw, 0);
+    this.system.train.rotation.order = "YXZ";
+    this.system.train.rotation.set(-pitch, yaw, 0);
     this.syncCabFurniture();
 
     const moving = this.isRiding();
