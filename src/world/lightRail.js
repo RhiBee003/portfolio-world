@@ -187,6 +187,105 @@ function createStationBeacon(x, z) {
   return beacon;
 }
 
+function createCatFlagTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 160;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#f2a8c4";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Soft hem strip
+  ctx.fillStyle = "#e891ad";
+  ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+
+  ctx.fillStyle = "#1a1218";
+  // Body
+  ctx.beginPath();
+  ctx.ellipse(118, 98, 48, 34, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Head
+  ctx.beginPath();
+  ctx.arc(162, 62, 28, 0, Math.PI * 2);
+  ctx.fill();
+  // Ears
+  ctx.beginPath();
+  ctx.moveTo(142, 48);
+  ctx.lineTo(138, 22);
+  ctx.lineTo(158, 42);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(178, 48);
+  ctx.lineTo(192, 20);
+  ctx.lineTo(188, 52);
+  ctx.closePath();
+  ctx.fill();
+  // Tail
+  ctx.beginPath();
+  ctx.moveTo(72, 100);
+  ctx.quadraticCurveTo(28, 70, 42, 38);
+  ctx.quadraticCurveTo(52, 58, 78, 88);
+  ctx.closePath();
+  ctx.fill();
+  // Eye shine
+  ctx.fillStyle = "#ffe8f2";
+  ctx.beginPath();
+  ctx.arc(172, 58, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+/** Tall plaza flagpole with a pink cat banner. */
+function createPlazaCatFlag(facing = 1) {
+  const group = new THREE.Group();
+  group.name = "cat-flag";
+
+  const poleMat = linkMat(0x8a9098, { roughness: 0.38, metalness: 0.55 });
+  const poleH = 5.1;
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, poleH, 10), poleMat);
+  pole.position.y = poleH * 0.5;
+  pole.castShadow = true;
+  group.add(pole);
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.14, 12), poleMat);
+  base.position.y = 0.07;
+  group.add(base);
+
+  const finial = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 10, 10),
+    linkMat(LINK.accent, { emissive: LINK.pinkGlow, emissiveIntensity: 0.35, metalness: 0.3, roughness: 0.4 })
+  );
+  finial.position.y = poleH + 0.05;
+  group.add(finial);
+
+  const flagW = 1.85;
+  const flagH = 1.15;
+  const cloth = new THREE.Mesh(
+    new THREE.PlaneGeometry(flagW, flagH, 8, 4),
+    new THREE.MeshStandardMaterial({
+      map: createCatFlagTexture(),
+      roughness: 0.72,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+    })
+  );
+  cloth.castShadow = true;
+  cloth.position.set(facing * (flagW * 0.5 + 0.04), poleH - flagH * 0.55, 0);
+  // Hang slightly open toward platform / plaza foot traffic.
+  cloth.rotation.y = facing > 0 ? 0 : Math.PI;
+  group.add(cloth);
+
+  group.userData.flagCloth = cloth;
+  group.userData.flagPhase = Math.random() * Math.PI * 2;
+  return group;
+}
+
 /**
  * Northgate Station–inspired stop: floating canopy, teal clerestory glass,
  * connected plaza → stairs → platform, pink ST accents.
@@ -406,29 +505,10 @@ function createStation(curve, pathT, label, towardPathX) {
   glow.rotation.y = rampDir > 0 ? Math.PI / 2 : -Math.PI / 2;
   deck.add(glow);
 
-  // Compact plaza sculpture — keeps clear of boarding path.
-  const sculpture = new THREE.Group();
-  sculpture.position.set(plazaX + rampDir * 1.4, 0, 2.6);
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 2.4, 8), metal);
-  trunk.position.y = 1.2;
-  sculpture.add(trunk);
-  for (const [bx, by, bz, rx, rz] of [
-    [0.45, 1.9, 0.15, 0.45, 0.25],
-    [-0.4, 2.15, -0.1, -0.35, 0.4],
-    [0.2, 2.4, 0.35, 0.55, -0.2],
-  ]) {
-    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, 1.05, 6), metal);
-    branch.position.set(bx, by, bz);
-    branch.rotation.set(rx, 0, rz);
-    sculpture.add(branch);
-    const blossom = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 8, 8),
-      linkMat(LINK.accent, { emissive: LINK.pinkGlow, emissiveIntensity: 0.28 })
-    );
-    blossom.position.set(bx * 1.55, by + 0.4, bz * 1.4);
-    sculpture.add(blossom);
-  }
-  deck.add(sculpture);
+  // Cat flag on the plaza pole — clear of boarding stairs.
+  const catFlag = createPlazaCatFlag(rampDir);
+  catFlag.position.set(plazaX + rampDir * 1.55, 0, 2.55);
+  deck.add(catFlag);
 
   group.add(deck);
 
@@ -481,6 +561,7 @@ function createStation(curve, pathT, label, towardPathX) {
 
   group.userData.stationT = pathT;
   group.userData.glow = glow;
+  group.userData.catFlag = catFlag;
   group.userData.center = { x: center.x, z: center.z };
   group.userData.platformRect = { ...footprint, y: platY };
   group.userData.platformDeckRect = platformDeckRect;
@@ -1572,16 +1653,25 @@ export class LightRailController {
 
     for (const station of [this.system.startStation, this.system.endStation]) {
       const glow = station.userData.glow;
-      if (!glow) continue;
-      const active =
-        (station === this.system.startStation && this.state === "idleAtStart") ||
-        (station === this.system.endStation && this.state === "idleAtEnd");
-      glow.material.emissiveIntensity = active ? pulse : 0.1;
-      glow.material.opacity = active ? 0.5 : 0.14;
+      if (glow) {
+        const active =
+          (station === this.system.startStation && this.state === "idleAtStart") ||
+          (station === this.system.endStation && this.state === "idleAtEnd");
+        glow.material.emissiveIntensity = active ? pulse : 0.1;
+        glow.material.opacity = active ? 0.5 : 0.14;
 
-      const beacon = station.userData.beacon;
-      if (beacon) {
-        beacon.material.emissiveIntensity = active ? 0.55 + pulse * 0.35 : 0.28;
+        const beacon = station.userData.beacon;
+        if (beacon) {
+          beacon.material.emissiveIntensity = active ? 0.55 + pulse * 0.35 : 0.28;
+        }
+      }
+
+      const flag = station.userData.catFlag;
+      const cloth = flag?.userData?.flagCloth;
+      if (cloth) {
+        const phase = flag.userData.flagPhase ?? 0;
+        cloth.rotation.z = Math.sin(elapsed * 1.7 + phase) * 0.07;
+        cloth.rotation.x = Math.sin(elapsed * 2.3 + phase * 1.3) * 0.04;
       }
     }
 
