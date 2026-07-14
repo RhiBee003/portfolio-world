@@ -52,6 +52,52 @@ body {
   overflow: hidden;
 }
 
+.soundtrack-toggle {
+  position: fixed;
+  top: max(0.85rem, env(safe-area-inset-top));
+  left: max(0.85rem, env(safe-area-inset-left));
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(28, 18, 24, 0.42);
+  color: #fff6f9;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 18px rgba(20, 10, 16, 0.22);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.soundtrack-toggle:hover {
+  background: rgba(28, 18, 24, 0.58);
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.soundtrack-toggle:active {
+  transform: scale(0.96);
+}
+
+.soundtrack-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: none;
+}
+
+.soundtrack-toggle[data-muted="false"] .soundtrack-icon-on,
+.soundtrack-toggle[data-muted="true"] .soundtrack-icon-off {
+  display: block;
+}
+
 #world-canvas {
   position: fixed;
   top: 0;

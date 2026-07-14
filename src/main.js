@@ -22,6 +22,7 @@ import { createFootstepTrail } from "./world/footsteps.js";
 import { worldHeight } from "./world/terrain.js";
 import { createMountainLandscape } from "./world/mountains.js";
 import { createSummitTitle } from "./world/summitTitle.js";
+import { createSoundtrack } from "./world/soundtrack.js";
 import { addSpaceNeedleToScene } from "./world/spaceNeedle.js";
 import {
   createSpaceNeedleElevator,
@@ -575,6 +576,7 @@ function boot() {
   const modeSelect = document.getElementById("mode-select");
   const deviceStep = modeSelect?.querySelector('[data-step="device"]');
   const handStep = modeSelect?.querySelector('[data-step="hand"]');
+  const soundtrack = createSoundtrack(document.getElementById("soundtrack-toggle"));
   let started = false;
   let selectedMode = null;
   let frameReady = false;
@@ -583,6 +585,7 @@ function boot() {
     if (started || !frameReady || selectedMode == null) return;
     if (selectedMode.mode === "mobile" && !selectedMode.hand) return;
     started = true;
+    soundtrack.unlockAndPlay();
     input.setControlMode(selectedMode.mode, selectedMode.hand || "right");
     if (modeSelect) modeSelect.hidden = true;
     loading.classList.add("is-done");
@@ -611,6 +614,8 @@ function boot() {
     modeSelect.addEventListener("click", (e) => {
       const modeBtn = e.target.closest("[data-mode]");
       if (modeBtn) {
+        // First setup click unlocks autoplay for the looping soundtrack.
+        soundtrack.unlockAndPlay();
         const mode = modeBtn.getAttribute("data-mode") === "mobile" ? "mobile" : "desktop";
         if (mode === "desktop") {
           selectedMode = { mode: "desktop", hand: null };
@@ -624,6 +629,7 @@ function boot() {
 
       const handBtn = e.target.closest("[data-hand]");
       if (handBtn && selectedMode?.mode === "mobile") {
+        soundtrack.unlockAndPlay();
         selectedMode = {
           mode: "mobile",
           hand: handBtn.getAttribute("data-hand") === "left" ? "left" : "right",
