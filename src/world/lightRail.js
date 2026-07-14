@@ -1358,7 +1358,7 @@ export class LightRailController {
 
   getContextHint(cat, options = {}) {
     if (this.isRiding() && this.passenger) {
-      return this.formatContextHint("Light rail", `${controlHint("board")} get off the train`);
+      return this.formatContextHint("Light rail", "Riding — hold on until the next station");
     }
     if (this.passenger && this.isPassengerAtStation()) {
       return this.formatContextHint(
@@ -1419,24 +1419,18 @@ export class LightRailController {
   }
 
   tryDeboard(cat, input) {
-    if (!this.passenger || !this.wantsDeboard(input)) return false;
+    // Only allow leaving while the train is stopped at a station.
+    if (!this.passenger || this.isRiding() || !this.isPassengerAtStation()) return false;
+    if (!this.wantsDeboard(input)) return false;
     this.consumeBoardInput(input);
     this.deboard(cat);
     return true;
   }
 
   deboard(cat) {
-    const wasRiding = this.isRiding();
     this.passenger = false;
     this.boardingCooldown = LIGHT_RAIL_BOARD_COOLDOWN;
     this.rideT = 0;
-
-    if (wasRiding) {
-      const nearerEnd = this.pathT >= (LIGHT_RAIL_START_T + LIGHT_RAIL_END_T) * 0.5;
-      this.state = nearerEnd ? "idleAtEnd" : "idleAtStart";
-      this.pathT = nearerEnd ? LIGHT_RAIL_END_T : LIGHT_RAIL_START_T;
-      this.positionTrain();
-    }
 
     cat.setSeated(false);
     cat.viewPitch = 0;
@@ -1543,7 +1537,8 @@ export class LightRailController {
     }
 
     if (this.state === "ridingForward") {
-      if (this.tryDeboard(cat, input)) return false;
+      // Swallow board/deboard taps while moving so they can't jump off mid-ride.
+      if (this.wantsDeboard(input) || this.wantsBoard(input)) this.consumeBoardInput(input);
       this.rideT += dt / LIGHT_RAIL_RIDE_DURATION;
       const eased = easeInOut(Math.min(1, this.rideT));
       this.pathT = THREE.MathUtils.lerp(LIGHT_RAIL_START_T, LIGHT_RAIL_END_T, eased);
@@ -1556,7 +1551,7 @@ export class LightRailController {
     }
 
     if (this.state === "ridingBackward") {
-      if (this.tryDeboard(cat, input)) return false;
+      if (this.wantsDeboard(input) || this.wantsBoard(input)) this.consumeBoardInput(input);
       this.rideT += dt / LIGHT_RAIL_RIDE_DURATION;
       const eased = easeInOut(Math.min(1, this.rideT));
       this.pathT = THREE.MathUtils.lerp(LIGHT_RAIL_END_T, LIGHT_RAIL_START_T, eased);
