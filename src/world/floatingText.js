@@ -13,7 +13,6 @@ const UNDERLINE_HEX = "#e8a4bc";
 /** Soft pink titles matching the desktop project labels. */
 const PROJECT_TEXT_COLOR = "#e8a4bc";
 const LINK_TEXT_COLOR = "#d489a3";
-const RING_COLOR = 0xe891ad;
 const TEXT_RENDER_SCALE = 2;
 
 function configureTextTexture(texture) {
@@ -242,21 +241,18 @@ function createPreviewPanel(previewConfig, phaseSeed) {
 
 function createPathRing() {
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(1.55, 2.35, 48),
+    new THREE.RingGeometry(1.4, 2.1, 40),
     new THREE.MeshBasicMaterial({
-      color: RING_COLOR,
+      color: 0xf0d4de,
       transparent: true,
       opacity: 0,
       depthWrite: false,
-      depthTest: false,
-      fog: false,
-      toneMapped: false,
-      side: THREE.DoubleSide,
+      depthTest: true,
     })
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.2;
-  ring.renderOrder = 4;
+  ring.position.y = 0.14;
+  ring.renderOrder = 2;
   ring.frustumCulled = false;
   return ring;
 }
@@ -382,7 +378,7 @@ export function createPathFloatingLabels(curve) {
       wp.pathT,
       wp.side,
       wp.sideOffset,
-      wp.radius * 2.4,
+      wp.radius * 1.8,
       (textGroup, panels) => {
         if (wp.id === "hero") return;
 
@@ -493,10 +489,8 @@ function faceGroup(group, catPosition) {
 }
 
 function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt) {
-  // Stronger floor so pink rings read clearly on the pale path.
-  stop.userData.ring.material.opacity = ringProximity * 0.95;
-  stop.userData.ring.visible = ringProximity > 0.02;
-  stop.userData.ring.scale.set(0.9 + ringProximity * 0.28, 0.9 + ringProximity * 0.28, 1);
+  stop.userData.ring.material.opacity = ringProximity * 0.55;
+  stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
 
   const fade = smoothstep(textProximity);
   const visible = fade > 0.008;
