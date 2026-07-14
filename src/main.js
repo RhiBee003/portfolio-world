@@ -19,6 +19,8 @@ import { animateSkyThankYouMessage } from "./world/skyMessage.js";
 import { createRainfall } from "./world/rain.js";
 import { createLightRail, LightRailController } from "./world/lightRail.js";
 import { createFootstepTrail } from "./world/footsteps.js";
+import { worldHeight } from "./world/terrain.js";
+import { createMountainLandscape } from "./world/mountains.js";
 import { addSpaceNeedleToScene } from "./world/spaceNeedle.js";
 import {
   createSpaceNeedleElevator,
@@ -46,7 +48,7 @@ renderer.toneMappingExposure = 0.92;
 
 const scene = new THREE.Scene();
 const FOG_COLOR = 0xc9b0bd;
-const sceneFog = new THREE.Fog(FOG_COLOR, 14, 78);
+const sceneFog = new THREE.Fog(FOG_COLOR, 42, 160);
 scene.fog = sceneFog;
 
 const sky = createSky();
@@ -69,7 +71,7 @@ scene.add(lightRailSystem.root);
 const lightRail = new LightRailController(lightRailSystem);
 
 function getCombinedGroundY(x, z, elevatorState, inNeedle, onStairs) {
-  let y = 0;
+  let y = worldHeight(x, z);
   const railY = lightRail.getWalkHeight(x, z);
   if (railY !== null) y = Math.max(y, railY);
   if (inNeedle || elevatorState.atTop || onStairs) {
@@ -83,6 +85,9 @@ scene.add(pathArrows);
 
 const ground = createGround();
 scene.add(ground);
+
+const mountains = createMountainLandscape();
+scene.add(mountains);
 
 const catMesh = createCat();
 scene.add(catMesh);
@@ -107,7 +112,7 @@ const spawnT = getWaypointRingT(heroWaypoint);
 const spawnRing = getWaypointRingPosition(heroWaypoint, curve);
 const spawnTangent = curve.getTangentAt(spawnT).normalize();
 
-cat.position.set(spawnRing.x, 0, spawnRing.z);
+cat.position.set(spawnRing.x, worldHeight(spawnRing.x, spawnRing.z), spawnRing.z);
 const roadFacing = Math.atan2(spawnTangent.x, spawnTangent.z);
 let viewYaw = roadFacing + 0.38;
 cat.facing = viewYaw + Math.PI;
@@ -364,8 +369,8 @@ function applyCamera() {
   camera.near = THREE.MathUtils.lerp(0.1, onTrain ? 0.12 : 0.25, easedBlend);
   camera.updateProjectionMatrix();
 
-  sceneFog.near = THREE.MathUtils.lerp(12, 18, easedBlend);
-  sceneFog.far = THREE.MathUtils.lerp(68, 88, easedBlend);
+  sceneFog.near = THREE.MathUtils.lerp(38, 48, easedBlend);
+  sceneFog.far = THREE.MathUtils.lerp(145, 175, easedBlend);
 
   sun.position.set(
     cat.position.x + SUN_DIRECTION.x * 80,
@@ -396,10 +401,7 @@ function animate() {
   const inNeedle = isInSpaceNeedleCompound(cat.position.x, cat.position.z, cat.position.y);
   const onNeedleStairs = inNeedle && isOnStairCorridor(cat.position.x, cat.position.z);
   const onRail = lightRail.isOnRailCorridor(cat.position.x, cat.position.z);
-  const useVariableGround = inNeedle || elevatorState.atTop || onRail || onNeedleStairs;
-  const getGroundY = useVariableGround
-    ? (x, z) => getCombinedGroundY(x, z, elevatorState, inNeedle, onNeedleStairs)
-    : undefined;
+  const getGroundY = (x, z) => getCombinedGroundY(x, z, elevatorState, inNeedle, onNeedleStairs);
   const activeCollisions = onRail
     ? lightRail.filterCollisions(cat.position.x, cat.position.z, collisions)
     : inNeedle

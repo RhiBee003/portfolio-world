@@ -18,6 +18,7 @@ import {
   LIGHT_RAIL_CONNECTORS,
   LIGHT_RAIL_PATH_SIGNS,
 } from "./lightRailConfig.js";
+import { worldHeight } from "./terrain.js";
 
 /** Station / sign palette (portfolio) — train uses LINK_PAL separately. */
 const PAL = {
@@ -112,23 +113,40 @@ function createWalkway(rect) {
   const d = rect.z1 - rect.z0;
   const cx = (rect.x0 + rect.x1) * 0.5;
   const cz = (rect.z0 + rect.z1) * 0.5;
+  const lift = rect.y ?? 0.04;
+  const segsX = Math.max(4, Math.ceil(w / 2));
+  const segsZ = Math.max(1, Math.ceil(d / 1.5));
 
-  const pad = new THREE.Mesh(
-    new THREE.BoxGeometry(w, 0.08, d),
-    linkMat(0xc4c2bc, { roughness: 0.94 })
-  );
-  pad.position.set(cx, rect.y ?? 0.04, cz);
+  const geo = new THREE.PlaneGeometry(w, d, segsX, segsZ);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i += 1) {
+    const wx = cx + pos.getX(i);
+    const wz = cz + pos.getZ(i);
+    pos.setY(i, worldHeight(wx, wz) + lift);
+  }
+  geo.computeVertexNormals();
+
+  const pad = new THREE.Mesh(geo, linkMat(0xc4c2bc, { roughness: 0.94 }));
+  pad.position.set(cx, 0, cz);
   pad.receiveShadow = true;
   group.add(pad);
 
   // Soft edge strips so the connector reads as a continuous approach.
   for (const side of [-1, 1]) {
-    const curb = new THREE.Mesh(
-      new THREE.BoxGeometry(w, 0.06, 0.14),
-      linkMat(0xa8a69f, { roughness: 0.9 })
-    );
-    curb.position.set(cx, (rect.y ?? 0.04) + 0.05, cz + side * (d * 0.5 - 0.08));
-    group.add(curb);
+    for (let i = 0; i < segsX; i += 1) {
+      const segW = w / segsX;
+      const lx = -w * 0.5 + (i + 0.5) * segW;
+      const lz = side * (d * 0.5 - 0.08);
+      const wx = cx + lx;
+      const wz = cz + lz;
+      const curb = new THREE.Mesh(
+        new THREE.BoxGeometry(segW * 0.98, 0.06, 0.14),
+        linkMat(0xa8a69f, { roughness: 0.9 })
+      );
+      curb.position.set(wx, worldHeight(wx, wz) + lift + 0.05, wz);
+      group.add(curb);
+    }
   }
 
   return group;
@@ -137,12 +155,13 @@ function createWalkway(rect) {
 function createPathSign(x, z) {
   const group = new THREE.Group();
   group.name = "light-rail-path-sign";
+  const baseY = worldHeight(x, z);
 
   const post = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.11, 5.4, 8),
     linkMat(0x8a9098, { metalness: 0.45, roughness: 0.45 })
   );
-  post.position.set(x, 2.7, z);
+  post.position.set(x, baseY + 2.7, z);
   post.castShadow = true;
   group.add(post);
 
@@ -155,7 +174,7 @@ function createPathSign(x, z) {
       fog: false,
     })
   );
-  board.position.set(x + 1.45, 4.4, z);
+  board.position.set(x + 1.45, baseY + 4.4, z);
   group.add(board);
 
   const arrow = new THREE.Mesh(
@@ -164,7 +183,7 @@ function createPathSign(x, z) {
   );
   arrow.rotation.z = -Math.PI / 2;
   arrow.rotation.y = Math.PI / 2;
-  arrow.position.set(x + 2.3, 4.4, z);
+  arrow.position.set(x + 2.3, baseY + 4.4, z);
   group.add(arrow);
 
   group.userData.board = board;
@@ -1527,7 +1546,7 @@ export class LightRailController {
     const heights = [];
 
     for (const rect of this.system.connectors) {
-      if (inRect(wx, wz, rect)) heights.push(rect.y);
+      if (inRect(wx, wz, rect)) heights.push(worldHeight(wx, wz) + (rect.y ?? 0.04));
     }
 
     for (const station of [this.system.startStation, this.system.endStation]) {

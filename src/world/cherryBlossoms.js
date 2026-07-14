@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { blocksSpaceNeedlePlacement } from "./spaceNeedleConfig.js";
 import { blocksLightRailPlacement } from "./lightRailConfig.js";
 import { createCherryPetalTrail } from "./cherryPetals.js";
+import { worldHeight } from "./terrain.js";
 
 /** Sparse routes — evenly spaced slots, one tree per slot. */
 const GROVE_ROUTES = {
@@ -232,7 +233,7 @@ function placeTree(group, x, z, rand, petalTrail, samples, placed) {
   recordGroveSample(x, z, samples);
   placed.push({ x, z });
   const tree = createCherryBlossomTree(rand);
-  tree.position.set(x, 0, z);
+  tree.position.set(x, worldHeight(x, z), z);
   tree.rotation.y = rand() * Math.PI * 2;
   group.add(tree);
   petalTrail.registerTree(tree);

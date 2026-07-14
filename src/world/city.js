@@ -5,6 +5,7 @@ import { SPACE_NEEDLE_POSITION, SPACE_NEEDLE_VISTA, blocksSpaceNeedlePlacement, 
 import { blocksLightRailPlacement, blocksWalkwayAndRailStructuresForBuilding, LIGHT_RAIL_DISTRICT, isInLightRailDistrictZ, isNearLightRailStationZ, getLightRailEastBuildingX, getLightRailTrackSamples } from "./lightRailConfig.js";
 import { PATH_POINTS, START_OVERPASS_T, getPlayerSpawnPoint, isInSpawnClearance } from "./waypoints.js";
 import { WORLD_CONFIG } from "./worldConfig.js";
+import { worldHeight } from "./terrain.js";
 
 const CITY = WORLD_CONFIG.city;
 const PATH_SAMPLES = 48;
@@ -73,7 +74,7 @@ async function addBuildingBatched(group, collisions, x, z, w, d, h, rotY, tone, 
   }
 }
 
-function pushCollision(collisions, x, z, w, d, h, rotY) {
+function pushCollision(collisions, x, z, w, d, h, rotY, baseY = 0) {
   const cos = Math.cos(rotY);
   const sin = Math.sin(rotY);
   collisions.push({
@@ -83,16 +84,18 @@ function pushCollision(collisions, x, z, w, d, h, rotY) {
     hz: d / 2 + 0.3,
     cos,
     sin,
-    minY: 0,
-    maxY: h + 1,
+    minY: baseY,
+    maxY: baseY + h + 1,
   });
 }
 
 function addBuilding(group, collisions, x, z, w, d, h, rotY, tone, withCollision = true) {
   if (blocksSpaceNeedlePlacement(x, z, spaceNeedleBuildingPad(w, d))) return;
 
+  const baseY = worldHeight(x, z);
   const building = new THREE.Group();
-  building.position.set(x, h / 2, z);
+  // Upright on the grade — only yaw, never pitch/roll with the hill.
+  building.position.set(x, baseY + h / 2, z);
   building.rotation.y = rotY;
 
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), buildingMaterial(tone));
@@ -117,7 +120,7 @@ function addBuilding(group, collisions, x, z, w, d, h, rotY, tone, withCollision
   group.add(building);
 
   if (withCollision) {
-    pushCollision(collisions, x, z, w, d, h, rotY);
+    pushCollision(collisions, x, z, w, d, h, rotY, baseY);
   }
 }
 
@@ -761,15 +764,39 @@ export async function createCityAsync(curve, options = {}) {
 }
 
 export function createGround() {
-  const geo = new THREE.PlaneGeometry(200, 220);
+  const geo = new THREE.PlaneGeometry(200, 220, 96, 108);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  const groundZ = -60;
+  const colors = new Float32Array(pos.count * 3);
+  const low = new THREE.Color(0xf2eef2);
+  const high = new THREE.Color(0xd8d2ce);
+  const shade = new THREE.Color();
+
+  for (let i = 0; i < pos.count; i += 1) {
+    const x = pos.getX(i);
+    const z = pos.getZ(i) + groundZ;
+    const h = worldHeight(x, z);
+    pos.setY(i, h);
+
+    // Tint by elevation so the slope reads even under soft light / fog.
+    const t = THREE.MathUtils.clamp(h / 36, 0, 1);
+    shade.copy(low).lerp(high, t);
+    colors[i * 3] = shade.r;
+    colors[i * 3 + 1] = shade.g;
+    colors[i * 3 + 2] = shade.b;
+  }
+  pos.needsUpdate = true;
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+
   const mat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.98,
+    vertexColors: true,
+    roughness: 0.97,
     metalness: 0,
   });
   const ground = new THREE.Mesh(geo, mat);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, 0, -60);
+  ground.position.set(0, 0, groundZ);
   ground.receiveShadow = true;
   ground.frustumCulled = false;
   return ground;

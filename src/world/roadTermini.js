@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { buildingMaterial, brickMaterial } from "./materials.js";
 import { addBuildingWindows } from "./buildingWindows.js";
 import { START_OVERPASS_T, getPlayerSpawnPoint, isInSpawnClearance } from "./waypoints.js";
+import { worldHeight } from "./terrain.js";
 
-function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
+function pushCollision(collisions, x, z, w, d, h, rotY = 0, baseY = 0) {
   const cos = Math.cos(rotY);
   const sin = Math.sin(rotY);
   collisions.push({
@@ -13,17 +14,18 @@ function pushCollision(collisions, x, z, w, d, h, rotY = 0) {
     hz: d / 2 + 0.35,
     cos,
     sin,
-    minY: 0,
-    maxY: h + 1,
+    minY: baseY,
+    maxY: baseY + h + 1,
   });
 }
 
 function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) {
   const isBuilding = collide && h >= 4.5 && w >= 2.5 && d >= 2.5;
+  const baseY = worldHeight(x, z) + y;
 
   if (isBuilding) {
     const building = new THREE.Group();
-    building.position.set(x, y + h / 2, z);
+    building.position.set(x, baseY + h / 2, z);
     building.rotation.y = rotY;
 
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -34,18 +36,18 @@ function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) 
     addBuildingWindows(building, w, d, h, Math.round(x * 23 + z * 41 + h * 5));
     building.frustumCulled = false;
     group.add(building);
-    pushCollision(collisions, x, z, w, d, h, rotY);
+    pushCollision(collisions, x, z, w, d, h, rotY, baseY);
     return mesh;
   }
 
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-  mesh.position.set(x, y + h / 2, z);
+  mesh.position.set(x, baseY + h / 2, z);
   mesh.rotation.y = rotY;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.frustumCulled = false;
   group.add(mesh);
-  if (collide) pushCollision(collisions, x, z, w, d, h, rotY);
+  if (collide) pushCollision(collisions, x, z, w, d, h, rotY, baseY);
   return mesh;
 }
 
@@ -159,7 +161,11 @@ function createStartOverpass(curve, group, collisions, spawn) {
     })
   );
   tunnelLight.rotation.x = -Math.PI / 2;
-  tunnelLight.position.set(cx - tangent.x * 1.5, 0.04, cz - tangent.z * 1.5);
+  tunnelLight.position.set(
+    cx - tangent.x * 1.5,
+    worldHeight(cx, cz) + 0.04,
+    cz - tangent.z * 1.5
+  );
   tunnelLight.frustumCulled = false;
   group.add(tunnelLight);
 }
@@ -170,6 +176,7 @@ function createEndRoundabout(curve, group, collisions) {
   const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
   const cx = end.x;
   const cz = end.z;
+  const baseY = worldHeight(cx, cz);
 
   const asphalt = new THREE.MeshStandardMaterial({
     color: 0xe8e4e8,
@@ -178,7 +185,7 @@ function createEndRoundabout(curve, group, collisions) {
   });
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.8, 6.2, 48), asphalt);
   ring.rotation.x = -Math.PI / 2;
-  ring.position.set(cx, 0.025, cz);
+  ring.position.set(cx, baseY + 0.025, cz);
   ring.receiveShadow = true;
   ring.frustumCulled = false;
   group.add(ring);
@@ -187,21 +194,21 @@ function createEndRoundabout(curve, group, collisions) {
     new THREE.CylinderGeometry(3.5, 3.8, 0.35, 32),
     brickMaterial(0xf0eaee)
   );
-  island.position.set(cx, 0.18, cz);
+  island.position.set(cx, baseY + 0.18, cz);
   island.receiveShadow = true;
   island.frustumCulled = false;
   group.add(island);
-  pushCollision(collisions, cx, cz, 7.2, 7.2, 0.5);
+  pushCollision(collisions, cx, cz, 7.2, 7.2, 0.5, 0, baseY);
 
   const basin = new THREE.Mesh(
     new THREE.CylinderGeometry(2.2, 2.4, 0.5, 24),
     brickMaterial(0xf6c8d7)
   );
-  basin.position.set(cx, 0.55, cz);
+  basin.position.set(cx, baseY + 0.55, cz);
   basin.castShadow = true;
   basin.frustumCulled = false;
   group.add(basin);
-  pushCollision(collisions, cx, cz, 4.8, 4.8, 0.6);
+  pushCollision(collisions, cx, cz, 4.8, 4.8, 0.6, 0, baseY);
 
   const water = new THREE.Mesh(
     new THREE.SphereGeometry(1.15, 20, 16, 0, Math.PI * 2, 0, Math.PI / 2),
@@ -215,9 +222,10 @@ function createEndRoundabout(curve, group, collisions) {
       opacity: 0.88,
     })
   );
-  water.position.set(cx, 0.95, cz);
+  water.position.set(cx, baseY + 0.95, cz);
   water.frustumCulled = false;
   water.userData.isFountain = true;
+  water.userData.fountainBaseY = baseY + 0.95;
   group.add(water);
 
   const spurCount = 8;
@@ -227,7 +235,7 @@ function createEndRoundabout(curve, group, collisions) {
     const sz = cz + Math.sin(angle) * 4.8;
     const spur = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 1.1), asphalt);
     spur.rotation.y = -angle + Math.PI / 2;
-    spur.position.set(sx, 0.03, sz);
+    spur.position.set(sx, worldHeight(sx, sz) + 0.03, sz);
     spur.receiveShadow = true;
     spur.frustumCulled = false;
     group.add(spur);
@@ -277,7 +285,8 @@ export function createRoadTermini(curve) {
 export function animateFountain(group, elapsed) {
   group.traverse((child) => {
     if (!child.userData.isFountain) return;
-    child.position.y = 0.95 + Math.sin(elapsed * 1.8) * 0.06;
+    const baseY = child.userData.fountainBaseY ?? 0.95;
+    child.position.y = baseY + Math.sin(elapsed * 1.8) * 0.06;
     child.scale.setScalar(1 + Math.sin(elapsed * 2.2) * 0.03);
   });
 }

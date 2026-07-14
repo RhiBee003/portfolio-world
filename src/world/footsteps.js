@@ -1,9 +1,10 @@
 import * as THREE from "three";
+import { worldHeight } from "./terrain.js";
 
 const LIFETIME = 3.4;
 const BASE_OPACITY = 0.78;
 const STEP_THRESHOLD = 0.28;
-const GROUND_Y = 0.022;
+const GROUND_OFFSET = 0.022;
 const PAW_SCALE = 1.22;
 
 const FEET = [
@@ -55,7 +56,7 @@ export function createFootstepTrail() {
       .copy(cat.position)
       .addScaledVector(_right, lx)
       .addScaledVector(_forward, lz);
-    _position.y = GROUND_Y;
+    _position.y = worldHeight(_position.x, _position.z) + GROUND_OFFSET;
 
     const mesh = new THREE.Mesh(pawGeometry, createPawMaterial());
     mesh.rotation.set(-Math.PI / 2, facing, 0);

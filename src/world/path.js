@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { pathSurfaceY } from "./terrain.js";
 
 function buildRibbonGeometry(curve, width, segments) {
   const positions = [];
@@ -9,6 +10,8 @@ function buildRibbonGeometry(curve, width, segments) {
   const normal = new THREE.Vector3();
   const left = new THREE.Vector3();
   const right = new THREE.Vector3();
+  const leftN = new THREE.Vector3();
+  const rightN = new THREE.Vector3();
 
   for (let i = 0; i <= segments; i += 1) {
     const t = i / segments;
@@ -18,11 +21,16 @@ function buildRibbonGeometry(curve, width, segments) {
 
     left.copy(point).addScaledVector(normal, -width / 2);
     right.copy(point).addScaledVector(normal, width / 2);
-    left.y = 0.02;
-    right.y = 0.02;
+    left.y = pathSurfaceY(left.x, left.z);
+    right.y = pathSurfaceY(right.x, right.z);
+
+    // Approx upright normal with a mild tilt from the grade between edges.
+    const dy = right.y - left.y;
+    leftN.set(-dy * 0.15, 1, 0).normalize();
+    rightN.copy(leftN);
 
     positions.push(left.x, left.y, left.z, right.x, right.y, right.z);
-    normals.push(0, 1, 0, 0, 1, 0);
+    normals.push(leftN.x, leftN.y, leftN.z, rightN.x, rightN.y, rightN.z);
     uvs.push(0, t, 1, t);
 
     if (i < segments) {
@@ -36,6 +44,7 @@ function buildRibbonGeometry(curve, width, segments) {
   geometry.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
   geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   return geometry;
 }
 

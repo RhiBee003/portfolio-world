@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { pathSurfaceY } from "./terrain.js";
 
 function createArrowShape() {
   const shape = new THREE.Shape();
@@ -57,7 +58,7 @@ export function createPathArrows(curve) {
     const arrow = new THREE.Mesh(arrowGeo, createArrowMaterial());
     arrow.rotation.order = "YXZ";
     arrow.rotation.set(-Math.PI / 2, yaw + Math.PI, 0);
-    arrow.position.set(center.x, 0.09, center.z);
+    arrow.position.set(center.x, pathSurfaceY(center.x, center.z) + 0.09, center.z);
     arrow.scale.set(1.55, 1.55, 1);
     arrow.renderOrder = 2;
     arrow.frustumCulled = false;

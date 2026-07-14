@@ -3,6 +3,7 @@ import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { createResumePdfPage, ensureResumePdfLoaded } from "./resumePage.js";
 import { PROJECT_PREVIEWS } from "./projectPreviews.js";
+import { worldHeight } from "./terrain.js";
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -313,7 +314,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   const sidePos = pathSideAt(curve, triggerT, side, sideOffset);
 
   const stop = new THREE.Group();
-  stop.position.set(ringCenter.x, 0, ringCenter.z);
+  stop.position.set(ringCenter.x, worldHeight(ringCenter.x, ringCenter.z), ringCenter.z);
   stop.userData.pathT = triggerT;
   stop.userData.ringT = ringT;
   stop.userData.proximityAnchor = ringCenter;
