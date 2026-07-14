@@ -46,7 +46,7 @@ renderer.toneMappingExposure = 0.92;
 
 const scene = new THREE.Scene();
 const FOG_COLOR = 0xc9b0bd;
-const sceneFog = new THREE.Fog(FOG_COLOR, 10, 62);
+const sceneFog = new THREE.Fog(FOG_COLOR, 14, 78);
 scene.fog = sceneFog;
 
 const sky = createSky();
@@ -364,8 +364,8 @@ function applyCamera() {
   camera.near = THREE.MathUtils.lerp(0.1, onTrain ? 0.12 : 0.25, easedBlend);
   camera.updateProjectionMatrix();
 
-  sceneFog.near = THREE.MathUtils.lerp(8, 14, easedBlend);
-  sceneFog.far = THREE.MathUtils.lerp(52, 68, easedBlend);
+  sceneFog.near = THREE.MathUtils.lerp(12, 18, easedBlend);
+  sceneFog.far = THREE.MathUtils.lerp(68, 88, easedBlend);
 
   sun.position.set(
     cat.position.x + SUN_DIRECTION.x * 80,

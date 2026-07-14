@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-const DROP_COUNT = 3200;
+const DROP_COUNT = 2400;
 const AREA = 34;
 const CEILING = 18;
 const FLOOR = -0.4;
@@ -41,7 +41,7 @@ export function createRainfall() {
   const material = new THREE.LineBasicMaterial({
     color: 0xc5d2de,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.32,
     depthWrite: false,
     fog: true,
   });
