@@ -525,6 +525,19 @@ body.control-mobile .ui-dock {
 
 body.control-mobile {
   font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body.control-mobile .bio-bar,
+body.control-mobile .zone-panel,
+body.control-mobile .controls-key-body,
+body.control-mobile .context-hint,
+body.control-mobile .mode-select-card {
+  /* Avoid soft double-outline look on mobile browsers */
+  text-shadow: none;
+  -webkit-text-stroke: 0;
 }
 
 body.control-mobile .controls-key {

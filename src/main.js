@@ -444,7 +444,11 @@ function animate() {
 
   const elapsed = clock.elapsedTime;
   if (floatingText) {
-    animateFloatingText(floatingText, elapsed, cat.position, camera, dt);
+    // Mobile uses the dock panels for copy — world labels stack as a second text layer.
+    floatingText.visible = !input.touchMode;
+    if (floatingText.visible) {
+      animateFloatingText(floatingText, elapsed, cat.position, camera, dt);
+    }
   }
   animatePathArrows(pathArrows, elapsed);
   animateFountain(terminiGroup, elapsed);

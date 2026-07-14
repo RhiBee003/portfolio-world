@@ -668,9 +668,10 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
     textMesh.material.opacity = fade;
     textMesh.visible = visible;
 
-    const glowOpacity = visible
-      ? panel.userData.glowLevel * GLOW_MAX_OPACITY * (panel.userData.glowMaxOpacity ?? 1)
-      : 0;
+    const glowOpacity =
+      visible && !document.body.classList.contains("control-mobile")
+        ? panel.userData.glowLevel * GLOW_MAX_OPACITY * (panel.userData.glowMaxOpacity ?? 1)
+        : 0;
     glowMesh.material.opacity = glowOpacity;
     glowMesh.visible = glowOpacity > 0.008;
   });
