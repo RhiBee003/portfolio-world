@@ -21,7 +21,7 @@ import { createLightRail, LightRailController } from "./world/lightRail.js";
 import { createFootstepTrail } from "./world/footsteps.js";
 import { worldHeight } from "./world/terrain.js";
 import { createMountainLandscape } from "./world/mountains.js";
-import { createSummitTitle } from "./world/summitTitle.js";
+import { createSummitTitle, animateSummitTitle } from "./world/summitTitle.js";
 import { createSoundtrack } from "./world/soundtrack.js";
 import { addSpaceNeedleToScene } from "./world/spaceNeedle.js";
 import {
@@ -504,6 +504,7 @@ function animate() {
   sky.position.set(cat.position.x, 0, cat.position.z);
   animateSky(sky, elapsed);
   rainfall.update(dt, cat.position);
+  animateSummitTitle(summitTitle, cat.position, dt);
   animateSkyThankYouMessage(sky.userData.thankYouMessage, {
     atTop: elevatorState.atTop,
     catPosition: cat.position,
