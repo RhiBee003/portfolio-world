@@ -130,9 +130,9 @@ export const WAYPOINTS = [
       { label: "GitHub", href: "https://github.com/RhiBee003" },
     ],
     floatLinks: [
-      { text: "LinkedIn", href: "https://www.linkedin.com/in/rhiannon-black-3b8b4124a/", y: 4.55 },
-      { text: "GitHub", href: "https://github.com/RhiBee003", y: 3.35 },
-      { text: "Email me", href: "mailto:rhibee003@gmail.com", y: 2.15 },
+      { text: "LinkedIn", href: "https://www.linkedin.com/in/rhiannon-black-3b8b4124a/", y: 3.45 },
+      { text: "GitHub", href: "https://github.com/RhiBee003", y: 2.25 },
+      { text: "Email me", href: "mailto:rhibee003@gmail.com", y: 1.05 },
     ],
     pathT: 0.84,
     side: 1,
