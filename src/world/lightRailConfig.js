@@ -78,7 +78,8 @@ export const LIGHT_RAIL_OCS = {
 /** Walkways from the main path out to each station (keep clear of buildings). */
 export const LIGHT_RAIL_CONNECTORS = [
   { x0: 0.5, x1: 24.5, z0: 23.5, z1: 29.5, y: 0.04 },
-  { x0: 0.5, x1: 24.0, z0: -137.5, z1: -131.5, y: 0.04 },
+  /** End station pad only — do not bridge across the fountain roundabout. */
+  { x0: 22.5, x1: 31.5, z0: -137.0, z1: -132.0, y: 0.04 },
 ];
 
 /** Platform centers — used to keep a walkable approach and sight-line open. */
