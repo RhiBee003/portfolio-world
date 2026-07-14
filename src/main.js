@@ -392,7 +392,7 @@ function animate() {
     const pathCurve = input.touchMode ? null : curve;
     cat.update(dt, input, activeCollisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw, pathCurve, {
       getGroundY,
-      maxStepUp: onNeedleStairs ? 0.2 : inNeedle ? 0.65 : onRail ? 0.22 : 0.42,
+      maxStepUp: onNeedleStairs ? 0.2 : inNeedle ? 0.65 : onRail ? 0.38 : 0.42,
     });
     if (input.touchMode && cat.wantsMove(input) && !firstPerson && !input.isTouchLooking?.()) {
       // Keep the camera behind the cat while dragging, unless looking with left thumb.

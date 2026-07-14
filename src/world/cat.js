@@ -377,17 +377,14 @@ export class CatController {
         this.grounded = true;
       }
     } else if (this.verticalVelocity <= 0) {
-      if (delta > stepTolerance) {
-        if (this.position.y > groundY + 0.1) this.grounded = false;
-      } else if (delta > 0 && this.grounded) {
+      // Climb/stand on any surface within the step budget; fall only if it's far above.
+      if (delta <= stepTolerance && delta >= -0.35) {
         this.position.y = groundY;
         this.verticalVelocity = 0;
         this.grounded = true;
-      } else if (this.position.y <= groundY + 0.06) {
-        this.position.y = groundY;
-        this.verticalVelocity = 0;
-        this.grounded = true;
-      } else if (this.position.y > groundY + stepTolerance + 0.08) {
+      } else if (delta > stepTolerance) {
+        this.grounded = false;
+      } else if (this.position.y > groundY + 0.45) {
         this.grounded = false;
       }
     }

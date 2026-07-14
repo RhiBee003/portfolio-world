@@ -250,54 +250,70 @@ function createStation(curve, pathT, label, towardPathX) {
   tactile.position.set(boardFaceX + rampDir * 0.38, platY + 0.11, 0);
   deck.add(tactile);
 
-  // Plaza pad — starts at platform outer edge and reaches the connector walkway.
+  // Platform path-side edge, then stairs, then plaza reaching the connector.
   const platOuterX = platX + rampDir * (platformW * 0.5);
-  const plazaW = 6.2;
-  const plazaX = platOuterX + rampDir * (plazaW * 0.5);
-  const plaza = new THREE.Mesh(new THREE.BoxGeometry(plazaW, 0.08, 7.5), concrete);
+  const rise = platY - walkY;
+  const steps = 6;
+  const totalRun = 2.75;
+  const stepRun = totalRun / steps;
+  const stepRise = rise / steps;
+  const stepThick = Math.max(stepRise + 0.025, 0.1);
+  const stepWidth = 4.4;
+  const stairOuterX = platOuterX + rampDir * totalRun;
+
+  const plazaW = 5.8;
+  const plazaX = stairOuterX + rampDir * (plazaW * 0.5 + 0.2);
+  const plaza = new THREE.Mesh(new THREE.BoxGeometry(plazaW, 0.1, 7.5), concrete);
   plaza.position.set(plazaX, walkY, 0);
   plaza.receiveShadow = true;
   deck.add(plaza);
 
   // Filler tongue that overlaps the connector end so the joint never gaps.
-  const tongue = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.07, 6.2), concrete);
+  const tongue = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.09, 6.2), concrete);
   tongue.position.set(plazaX + rampDir * (plazaW * 0.5 + 0.9), walkY, 0);
   tongue.receiveShadow = true;
   deck.add(tongue);
 
-  // Short stair run from plaza up to platform (path-side → boarding deck).
-  const rise = platY - walkY;
-  const steps = 5;
-  const stepRun = 0.42;
+  // Continuous stair from plaza up to platform — every tread is walk-sampled.
   const stairRoot = new THREE.Group();
+  const stairStepsLocal = [];
   for (let i = 0; i < steps; i += 1) {
-    const step = new THREE.Mesh(new THREE.BoxGeometry(stepRun, 0.1, 3.6), concrete);
-    // i=0 at plaza (low, outer); i=steps-1 at platform edge (high, inner).
-    const t = (steps - i - 0.5) / steps;
-    step.position.set(
-      platOuterX + rampDir * (t * steps * stepRun),
-      walkY + (i + 1) * (rise / steps),
-      0
-    );
+    // i=0 lowest / outer (plaza); i=steps-1 highest / inner (platform).
+    const t = (i + 0.5) / steps;
+    const localX = stairOuterX + (platOuterX - stairOuterX) * t;
+    const topY = walkY + (i + 1) * stepRise;
+    const step = new THREE.Mesh(new THREE.BoxGeometry(stepRun * 0.98, stepThick, stepWidth), concrete);
+    step.position.set(localX, topY - stepThick * 0.5, 0);
+    step.castShadow = true;
+    step.receiveShadow = true;
     stairRoot.add(step);
+    stairStepsLocal.push({
+      localX0: localX - stepRun * 0.52,
+      localX1: localX + stepRun * 0.52,
+      localZ0: -stepWidth * 0.5,
+      localZ1: stepWidth * 0.5,
+      y: topY,
+    });
   }
+
+  // Landing flush with platform so the top tread never leaves a hole.
+  const land = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, stepWidth + 0.2), concrete);
+  land.position.set(platOuterX - rampDir * 0.25, platY - 0.04, 0);
+  land.receiveShadow = true;
+  deck.add(land);
+
   for (const side of [-1, 1]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(steps * stepRun + 0.25, 0.08, 0.08), metal);
-    rail.position.set(platOuterX + rampDir * (steps * stepRun * 0.5), (walkY + platY) * 0.5 + 0.85, side * 1.85);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(totalRun + 0.35, 0.08, 0.08), metal);
+    rail.position.set((stairOuterX + platOuterX) * 0.5, (walkY + platY) * 0.5 + 0.9, side * (stepWidth * 0.5 - 0.12));
     stairRoot.add(rail);
-    const postA = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 6), metal);
-    postA.position.set(platOuterX + rampDir * steps * stepRun, walkY + 0.55, side * 1.85);
+    const postA = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.05, 6), metal);
+    postA.position.set(stairOuterX, walkY + 0.55, side * (stepWidth * 0.5 - 0.12));
     stairRoot.add(postA);
-    const postB = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 6), metal);
-    postB.position.set(platOuterX + rampDir * 0.15, platY + 0.45, side * 1.85);
+    const postB = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.05, 6), metal);
+    postB.position.set(platOuterX, platY + 0.5, side * (stepWidth * 0.5 - 0.12));
     stairRoot.add(postB);
   }
   deck.add(stairRoot);
-
-  // Bridge slab tying top stair to platform so nothing floats.
-  const land = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 3.8), concrete);
-  land.position.set(platX + rampDir * (platformW * 0.5 - 0.35), platY + 0.02, 0);
-  deck.add(land);
 
   // Piers under canopy — sit on plaza/platform, hangers meet pier tops.
   const pierXs = [platX + rampDir * 0.2, plazaX];
@@ -417,33 +433,61 @@ function createStation(curve, pathT, label, towardPathX) {
   group.add(deck);
 
   // World-space boarding volumes.
-  const corners = [];
-  for (const lx of [platX - platformW * 0.55, platX + platformW * 0.55, plazaX - plazaW * 0.55, plazaX + plazaW * 0.55]) {
-    for (const lz of [-platformLen * 0.55, platformLen * 0.55]) {
-      corners.push({
-        x: center.x + normal.x * lx + tangent.x * lz,
-        z: center.z + normal.z * lx + tangent.z * lz,
-      });
-    }
+  function localToWorldXZ(lx, lz) {
+    return {
+      x: center.x + normal.x * lx + tangent.x * lz,
+      z: center.z + normal.z * lx + tangent.z * lz,
+    };
   }
-  const xs = corners.map((c) => c.x);
-  const zs = corners.map((c) => c.z);
+
+  function localBoxToWorldRect(localX0, localX1, localZ0, localZ1, pad = 0.05) {
+    const corners = [
+      localToWorldXZ(localX0, localZ0),
+      localToWorldXZ(localX0, localZ1),
+      localToWorldXZ(localX1, localZ0),
+      localToWorldXZ(localX1, localZ1),
+    ];
+    const xs = corners.map((c) => c.x);
+    const zs = corners.map((c) => c.z);
+    return {
+      x0: Math.min(...xs) - pad,
+      x1: Math.max(...xs) + pad,
+      z0: Math.min(...zs) - pad,
+      z1: Math.max(...zs) + pad,
+    };
+  }
+
+  const platformDeckRect = {
+    ...localBoxToWorldRect(platX - platformW * 0.5, platX + platformW * 0.5, -platformLen * 0.5, platformLen * 0.5, 0.2),
+    y: platY,
+  };
+  const plazaRect = {
+    ...localBoxToWorldRect(plazaX - plazaW * 0.5, plazaX + plazaW * 0.5, -3.75, 3.75, 0.2),
+    y: walkY,
+  };
+  const stairRects = stairStepsLocal.map((step) => ({
+    ...localBoxToWorldRect(step.localX0, step.localX1, step.localZ0, step.localZ1, 0.06),
+    y: step.y,
+  }));
+
+  // Keep broad AABB for docking checks.
+  const footprint = localBoxToWorldRect(
+    Math.min(platX - platformW * 0.55, plazaX - plazaW * 0.55, stairOuterX),
+    Math.max(platX + platformW * 0.55, plazaX + plazaW * 0.55, platOuterX),
+    -platformLen * 0.55,
+    platformLen * 0.55,
+    0.5
+  );
 
   group.userData.stationT = pathT;
   group.userData.glow = glow;
   group.userData.center = { x: center.x, z: center.z };
-  group.userData.platformRect = {
-    x0: Math.min(...xs) - 0.5,
-    x1: Math.max(...xs) + 0.5,
-    z0: Math.min(...zs) - 0.5,
-    z1: Math.max(...zs) + 0.5,
-    y: platY,
-  };
+  group.userData.platformRect = { ...footprint, y: platY };
+  group.userData.platformDeckRect = platformDeckRect;
+  group.userData.plazaRect = plazaRect;
+  group.userData.stairRects = stairRects;
   group.userData.rampRect = {
-    x0: Math.min(...xs) - 1,
-    x1: Math.max(...xs) + 1,
-    z0: Math.min(...zs) - 1,
-    z1: Math.max(...zs) + 1,
+    ...footprint,
     y0: walkY,
     y1: platY,
   };
@@ -1082,8 +1126,6 @@ export class LightRailController {
   }
 
   getWalkHeight(wx, wz) {
-    const floorY = carFloorWorldY();
-
     if (this.passenger || this.isRiding()) {
       return passengerFeetWorldY();
     }
@@ -1095,27 +1137,57 @@ export class LightRailController {
     }
 
     for (const station of [this.system.startStation, this.system.endStation]) {
-      const plat = station.userData.platformRect;
-      if (plat && inRect(wx, wz, plat)) heights.push(plat.y);
+      const deck = station.userData.platformDeckRect;
+      if (deck && inRect(wx, wz, deck, 0.1)) heights.push(deck.y);
 
-      const dist = this.distToStation(wx, wz, station);
-      if (dist < LIGHT_RAIL_BOARD_RADIUS) {
-        const t = 1 - dist / LIGHT_RAIL_BOARD_RADIUS;
-        heights.push(THREE.MathUtils.lerp(0.02, floorY, t * t));
+      const plaza = station.userData.plazaRect;
+      if (plaza && inRect(wx, wz, plaza, 0.1)) heights.push(plaza.y);
+
+      const stairs = station.userData.stairRects;
+      if (stairs) {
+        for (const step of stairs) {
+          if (inRect(wx, wz, step, 0.04)) heights.push(step.y);
+        }
       }
+    }
+
+    // Solid floor inside / on the threshold of the car so you cannot fall through.
+    if (this.isOverTrainFloor(wx, wz)) {
+      heights.push(carFloorWorldY());
     }
 
     if (heights.length === 0) return null;
     return Math.max(...heights);
   }
 
+  isOverTrainFloor(wx, wz) {
+    this.system.train.updateMatrixWorld(true);
+    this._local.set(wx, carFloorWorldY(), wz);
+    this.system.train.worldToLocal(this._local);
+    const { length, width } = LIGHT_RAIL_CAR;
+    return Math.abs(this._local.z) < length * 0.5 && Math.abs(this._local.x) < width * 0.5;
+  }
+
   isOnRailCorridor(wx, wz) {
     if (this.isRiding() || this.passenger) return true;
+    if (this.isOverTrainFloor(wx, wz)) return true;
     for (const rect of this.system.connectors) {
-      if (inRect(wx, wz, rect)) return true;
+      if (inRect(wx, wz, rect, 0.35)) return true;
     }
-    if (this.distToStation(wx, wz, this.system.startStation) < LIGHT_RAIL_BOARD_RADIUS) return true;
-    if (this.distToStation(wx, wz, this.system.endStation) < LIGHT_RAIL_BOARD_RADIUS) return true;
+    for (const station of [this.system.startStation, this.system.endStation]) {
+      const plat = station.userData.platformRect;
+      if (plat && inRect(wx, wz, plat, 0.4)) return true;
+      const deck = station.userData.platformDeckRect;
+      if (deck && inRect(wx, wz, deck, 0.3)) return true;
+      const plaza = station.userData.plazaRect;
+      if (plaza && inRect(wx, wz, plaza, 0.3)) return true;
+      const stairs = station.userData.stairRects;
+      if (stairs) {
+        for (const step of stairs) {
+          if (inRect(wx, wz, step, 0.2)) return true;
+        }
+      }
+    }
     return false;
   }
 
