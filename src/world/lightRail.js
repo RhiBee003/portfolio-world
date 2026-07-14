@@ -1272,6 +1272,10 @@ export class LightRailController {
     return input.interactQueued;
   }
 
+  wantsDeboard(input) {
+    return input.jumpQueued;
+  }
+
   consumeBoardInput(input) {
     if (input.jumpQueued) input.jumpQueued = false;
   }
@@ -1281,6 +1285,15 @@ export class LightRailController {
   }
 
   getContextHint(cat, options = {}) {
+    if (this.isRiding() && this.passenger) {
+      return this.formatContextHint("Light rail", `${controlHint("board")} get off the train`);
+    }
+    if (this.passenger && this.isPassengerAtStation()) {
+      return this.formatContextHint(
+        "Light rail",
+        `${controlHint("board")} get off · ${controlHint("ride")} ride to the other station`
+      );
+    }
     if (this.canDepart()) {
       return this.formatContextHint("Light rail", `${controlHint("ride")} ride to the other station`);
     }
@@ -1333,6 +1346,41 @@ export class LightRailController {
     return true;
   }
 
+  tryDeboard(cat, input) {
+    if (!this.passenger || !this.wantsDeboard(input)) return false;
+    this.consumeBoardInput(input);
+    this.deboard(cat);
+    return true;
+  }
+
+  deboard(cat) {
+    const wasRiding = this.isRiding();
+    this.passenger = false;
+    this.boardingCooldown = LIGHT_RAIL_BOARD_COOLDOWN;
+    this.rideT = 0;
+
+    if (wasRiding) {
+      const nearerEnd = this.pathT >= (LIGHT_RAIL_START_T + LIGHT_RAIL_END_T) * 0.5;
+      this.state = nearerEnd ? "idleAtEnd" : "idleAtStart";
+      this.pathT = nearerEnd ? LIGHT_RAIL_END_T : LIGHT_RAIL_START_T;
+      this.positionTrain();
+    }
+
+    cat.setSeated(false);
+    cat.viewPitch = 0;
+    this.getDoorWorldPosition(this._worldPos);
+    cat.position.copy(this._worldPos);
+    cat.cat.position.set(cat.position.x, cat.position.y, cat.position.z);
+    cat.grounded = true;
+    cat.verticalVelocity = 0;
+    cat.isMoving = false;
+    const yaw = this.system.train.rotation.y;
+    cat.facing = yaw + Math.PI;
+    cat.cat.rotation.y = cat.facing;
+    cat.resetWalkPose();
+    this.wasInside = this.isInsideTrain(cat);
+  }
+
   applyCatToTrain(cat, atDoor = false) {
     this.system.train.updateMatrixWorld(true);
     const yaw = this.system.train.rotation.y;
@@ -1365,7 +1413,7 @@ export class LightRailController {
   }
 
   canInteract(cat, options = {}) {
-    return this.canBoard(cat, options) || this.canDepart();
+    return this.canBoard(cat, options) || this.canDepart() || this.passenger;
   }
 
   finishRide(cat, nextState, pathT) {
@@ -1407,6 +1455,7 @@ export class LightRailController {
     if (!inside) this.wasInside = false;
 
     if (this.state === "idleAtStart") {
+      if (this.tryDeboard(cat, input)) return false;
       if (this.tryBoard(cat, input, options)) return true;
       if (this.tryDepart(cat, input)) return true;
       this.wasInside = inside;
@@ -1414,6 +1463,7 @@ export class LightRailController {
     }
 
     if (this.state === "idleAtEnd") {
+      if (this.tryDeboard(cat, input)) return false;
       if (this.tryBoard(cat, input, options)) return true;
       if (this.tryDepart(cat, input)) return true;
       this.wasInside = inside;
@@ -1421,6 +1471,7 @@ export class LightRailController {
     }
 
     if (this.state === "ridingForward") {
+      if (this.tryDeboard(cat, input)) return false;
       this.rideT += dt / LIGHT_RAIL_RIDE_DURATION;
       const eased = easeInOut(Math.min(1, this.rideT));
       this.pathT = THREE.MathUtils.lerp(LIGHT_RAIL_START_T, LIGHT_RAIL_END_T, eased);
@@ -1433,6 +1484,7 @@ export class LightRailController {
     }
 
     if (this.state === "ridingBackward") {
+      if (this.tryDeboard(cat, input)) return false;
       this.rideT += dt / LIGHT_RAIL_RIDE_DURATION;
       const eased = easeInOut(Math.min(1, this.rideT));
       this.pathT = THREE.MathUtils.lerp(LIGHT_RAIL_END_T, LIGHT_RAIL_START_T, eased);
