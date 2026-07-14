@@ -241,43 +241,47 @@ function createCatFlagTexture() {
   return texture;
 }
 
-/** Tall plaza flagpole with a pink cat banner. */
+/** Tall plaza flagpole with a pink cat banner — sits outside the canopy. */
 function createPlazaCatFlag(facing = 1) {
   const group = new THREE.Group();
   group.name = "cat-flag";
+  group.frustumCulled = false;
 
-  const poleMat = linkMat(0x8a9098, { roughness: 0.38, metalness: 0.55 });
-  const poleH = 5.1;
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, poleH, 10), poleMat);
+  const poleMat = linkMat(0x6e747c, { roughness: 0.35, metalness: 0.55 });
+  const poleH = 6.4;
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, poleH, 12), poleMat);
   pole.position.y = poleH * 0.5;
   pole.castShadow = true;
+  pole.frustumCulled = false;
   group.add(pole);
 
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.14, 12), poleMat);
-  base.position.y = 0.07;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.18, 12), poleMat);
+  base.position.y = 0.09;
   group.add(base);
 
   const finial = new THREE.Mesh(
-    new THREE.SphereGeometry(0.09, 10, 10),
-    linkMat(LINK.accent, { emissive: LINK.pinkGlow, emissiveIntensity: 0.35, metalness: 0.3, roughness: 0.4 })
+    new THREE.SphereGeometry(0.12, 12, 12),
+    linkMat(LINK.accent, { emissive: LINK.pinkGlow, emissiveIntensity: 0.55, metalness: 0.25, roughness: 0.35 })
   );
-  finial.position.y = poleH + 0.05;
+  finial.position.y = poleH + 0.08;
+  finial.frustumCulled = false;
   group.add(finial);
 
-  const flagW = 1.85;
-  const flagH = 1.15;
+  const flagW = 2.35;
+  const flagH = 1.45;
   const cloth = new THREE.Mesh(
-    new THREE.PlaneGeometry(flagW, flagH, 8, 4),
-    new THREE.MeshStandardMaterial({
+    new THREE.PlaneGeometry(flagW, flagH, 10, 6),
+    new THREE.MeshBasicMaterial({
       map: createCatFlagTexture(),
-      roughness: 0.72,
-      metalness: 0.02,
       side: THREE.DoubleSide,
+      toneMapped: false,
+      fog: false,
     })
   );
   cloth.castShadow = true;
-  cloth.position.set(facing * (flagW * 0.5 + 0.04), poleH - flagH * 0.55, 0);
-  // Hang slightly open toward platform / plaza foot traffic.
+  cloth.frustumCulled = false;
+  cloth.renderOrder = 3;
+  cloth.position.set(facing * (flagW * 0.5 + 0.06), poleH - flagH * 0.52, 0);
   cloth.rotation.y = facing > 0 ? 0 : Math.PI;
   group.add(cloth);
 
@@ -505,9 +509,9 @@ function createStation(curve, pathT, label, towardPathX) {
   glow.rotation.y = rampDir > 0 ? Math.PI / 2 : -Math.PI / 2;
   deck.add(glow);
 
-  // Cat flag on the plaza pole — clear of boarding stairs.
+  // Cat flag outside the canopy on the path/connector edge so it reads as a landmark.
   const catFlag = createPlazaCatFlag(rampDir);
-  catFlag.position.set(plazaX + rampDir * 1.55, 0, 2.55);
+  catFlag.position.set(plazaX + rampDir * (plazaW * 0.5 + 2.05), 0, 0);
   deck.add(catFlag);
 
   group.add(deck);
