@@ -79,8 +79,8 @@ export const LIGHT_RAIL_OCS = {
 
 /** Walkways from the main path out to each station (keep clear of buildings). */
 export const LIGHT_RAIL_CONNECTORS = [
-  /** Start station pad — short stub by the platform (mirrors the end stop). */
-  { x0: 22.5, x1: 31.5, z0: 23.5, z1: 29.5, y: 0.04 },
+  /** Start station — no connector pad / walkway. */
+  null,
   /** End station pad only — do not bridge across the fountain roundabout. */
   { x0: 22.5, x1: 31.5, z0: -137.0, z1: -132.0, y: 0.04 },
 ];
@@ -93,7 +93,8 @@ export const LIGHT_RAIL_STATION_SITES = [
 
 /** Tall signs on the main path pointing east toward the light rail. */
 export const LIGHT_RAIL_PATH_SIGNS = [
-  { x: 2.4, z: 26.5 },
+  /** First station — no path pole. */
+  null,
   { x: 2.4, z: -134.5 },
 ];
 
@@ -138,7 +139,7 @@ export function distToLightRailTrack(x, z) {
 /** Keep buildings off the track bed, platforms, and connector walkways only. */
 export function isInLightRailCorridor(x, z) {
   for (const rect of LIGHT_RAIL_CONNECTORS) {
-    if (inConnectorRect(x, z, rect, CONNECTOR_CLEARANCE_MARGIN)) return true;
+    if (rect && inConnectorRect(x, z, rect, CONNECTOR_CLEARANCE_MARGIN)) return true;
   }
   if (distToLightRailTrack(x, z) < TRACK_EXCLUSION_RADIUS) return true;
   return false;
@@ -163,7 +164,7 @@ export function isNearLightRailStationZ(z) {
 /** Wider keep-out for building placement around rail walkways and guideway. */
 export function blocksWalkwayAndRailStructures(x, z) {
   for (const rect of LIGHT_RAIL_CONNECTORS) {
-    if (inConnectorRect(x, z, rect, BUILDING_CONNECTOR_MARGIN)) return true;
+    if (rect && inConnectorRect(x, z, rect, BUILDING_CONNECTOR_MARGIN)) return true;
   }
   if (distToLightRailTrack(x, z) < BUILDING_TRACK_CLEARANCE) return true;
   if (isInLightRailStationVista(x, z)) return true;

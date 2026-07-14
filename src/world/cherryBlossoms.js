@@ -13,15 +13,6 @@ const GROVE_ROUTES = {
     new THREE.Vector3(-24, 0, 10.5),
     new THREE.Vector3(-31, 0, 7.5),
   ],
-  /** North station approach — short pad beside the platform (mirrors south). */
-  lightRailNorth: [
-    new THREE.Vector3(23.0, 0, 22.2),
-    new THREE.Vector3(26.5, 0, 21.8),
-    new THREE.Vector3(29.5, 0, 22.4),
-    new THREE.Vector3(23.2, 0, 30.8),
-    new THREE.Vector3(26.8, 0, 31.0),
-    new THREE.Vector3(29.8, 0, 30.6),
-  ],
   /** South station approach — both sides of the connector. */
   lightRailSouth: [
     new THREE.Vector3(23.0, 0, -130.8),

@@ -397,10 +397,12 @@ function createStation(curve, pathT, label, towardPathX) {
   deck.add(plaza);
 
   // Filler tongue that overlaps the short connector pad so the joint never gaps.
-  const tongue = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.09, 6.2), concrete);
-  tongue.position.set(plazaX + rampDir * (plazaW * 0.5 + 1.5), walkY, 0);
-  tongue.receiveShadow = true;
-  deck.add(tongue);
+  if (label !== "start") {
+    const tongue = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.09, 6.2), concrete);
+    tongue.position.set(plazaX + rampDir * (plazaW * 0.5 + 1.5), walkY, 0);
+    tongue.receiveShadow = true;
+    deck.add(tongue);
+  }
 
   // Continuous stair from plaza up to platform — every tread is walk-sampled.
   const stairRoot = new THREE.Group();
@@ -1334,11 +1336,15 @@ export function createLightRail() {
   root.name = "light-rail";
 
   LIGHT_RAIL_CONNECTORS.forEach((rect) => {
-    root.add(createWalkway(rect));
+    if (rect) root.add(createWalkway(rect));
   });
 
-  const pathSigns = LIGHT_RAIL_PATH_SIGNS.map((sign) => createPathSign(sign.x, sign.z));
-  pathSigns.forEach((sign) => root.add(sign));
+  const pathSigns = LIGHT_RAIL_PATH_SIGNS.map((sign) =>
+    sign ? createPathSign(sign.x, sign.z) : null
+  );
+  pathSigns.forEach((sign) => {
+    if (sign) root.add(sign);
+  });
 
   const segments = 160;
   const guideway = new THREE.Mesh(
@@ -1595,6 +1601,7 @@ export class LightRailController {
     const heights = [];
 
     for (const rect of this.system.connectors) {
+      if (!rect) continue;
       if (inRect(wx, wz, rect)) heights.push(worldHeight(wx, wz) + (rect.y ?? 0.04));
     }
 
@@ -1637,7 +1644,7 @@ export class LightRailController {
     if (this.isRiding() || this.passenger) return true;
     if (this.isOverTrainFloor(wx, wz)) return true;
     for (const rect of this.system.connectors) {
-      if (inRect(wx, wz, rect, 0.35)) return true;
+      if (rect && inRect(wx, wz, rect, 0.35)) return true;
     }
     for (const station of [this.system.startStation, this.system.endStation]) {
       const plat = station.userData.platformRect;
@@ -2069,6 +2076,7 @@ export class LightRailController {
     }
 
     for (const sign of this.system.pathSigns ?? []) {
+      if (!sign) continue;
       const board = sign.userData.board;
       const arrow = sign.userData.arrow;
       if (board) board.material.emissiveIntensity = signPulse;
