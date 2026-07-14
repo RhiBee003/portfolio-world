@@ -16,6 +16,7 @@ import { createZoneUI, createInput, createBioBar, createContextHint } from "./wo
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 import { createSky, animateSky, resizeSky } from "./world/sky.js";
 import { animateSkyThankYouMessage } from "./world/skyMessage.js";
+import { createRainfall } from "./world/rain.js";
 import { createLightRail, LightRailController } from "./world/lightRail.js";
 import { createFootstepTrail } from "./world/footsteps.js";
 import { addSpaceNeedleToScene } from "./world/spaceNeedle.js";
@@ -35,20 +36,24 @@ const renderer = new THREE.WebGLRenderer({
   alpha: false,
   powerPreference: "high-performance",
 });
-renderer.setClearColor(0xefc4d6);
+renderer.setClearColor(0xc9b0bd);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 0.92;
 
 const scene = new THREE.Scene();
-const sceneFog = new THREE.Fog(0xefc4d6, 35, 120);
+const FOG_COLOR = 0xc9b0bd;
+const sceneFog = new THREE.Fog(FOG_COLOR, 10, 62);
 scene.fog = sceneFog;
 
 const sky = createSky();
 scene.add(sky);
+
+const rainfall = createRainfall();
+scene.add(rainfall.mesh);
 
 const { sun } = createSunLighting(scene);
 
@@ -359,8 +364,8 @@ function applyCamera() {
   camera.near = THREE.MathUtils.lerp(0.1, onTrain ? 0.12 : 0.25, easedBlend);
   camera.updateProjectionMatrix();
 
-  sceneFog.near = THREE.MathUtils.lerp(35, 55, easedBlend);
-  sceneFog.far = THREE.MathUtils.lerp(120, 160, easedBlend);
+  sceneFog.near = THREE.MathUtils.lerp(8, 14, easedBlend);
+  sceneFog.far = THREE.MathUtils.lerp(52, 68, easedBlend);
 
   sun.position.set(
     cat.position.x + SUN_DIRECTION.x * 80,
@@ -489,6 +494,7 @@ function animate() {
 
   sky.position.set(cat.position.x, 0, cat.position.z);
   animateSky(sky, elapsed);
+  rainfall.update(dt, cat.position);
   animateSkyThankYouMessage(sky.userData.thankYouMessage, {
     atTop: elevatorState.atTop,
     catPosition: cat.position,

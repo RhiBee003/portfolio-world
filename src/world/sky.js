@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { createSkyThankYouMessage } from "./skyMessage.js";
 import { getMoonLocalPosition } from "./skyMoon.js";
 
-const SKY_GREY = new THREE.Color(0x2a2a38);
-const SKY_PINK = new THREE.Color(0xefc4d6);
+const SKY_GREY = new THREE.Color(0x3a3a48);
+const SKY_PINK = new THREE.Color(0xc9b0bd);
 const SKY_RADIUS = 200;
 
 const SKY_FRAGMENT = `
@@ -52,8 +52,8 @@ const SKY_FRAGMENT = `
     vec3 sky = mix(bottomColor, topColor, blend);
 
     float stars = starField(dir);
-    vec3 starColor = vec3(1.0, 0.98, 0.95) * stars * 2.4;
-    sky += starColor * (0.5 + blend * 0.5);
+    vec3 starColor = vec3(1.0, 0.98, 0.95) * stars * 0.55;
+    sky += starColor * (0.25 + blend * 0.2);
 
     gl_FragColor = vec4(sky, 1.0);
   }

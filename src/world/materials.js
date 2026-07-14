@@ -4,13 +4,13 @@ import * as THREE from "three";
 export const SUN_DIRECTION = new THREE.Vector3(-0.65, 1, 0.45).normalize();
 
 export function createSunLighting(scene) {
-  const ambient = new THREE.AmbientLight(0xfff4f8, 0.38);
+  const ambient = new THREE.AmbientLight(0xe8d6e0, 0.48);
   scene.add(ambient);
 
-  const hemi = new THREE.HemisphereLight(0xf2d0df, 0x9a9aa2, 0.42);
+  const hemi = new THREE.HemisphereLight(0xd4c0cc, 0x8a9098, 0.52);
   scene.add(hemi);
 
-  const sun = new THREE.DirectionalLight(0xffffff, 1.15);
+  const sun = new THREE.DirectionalLight(0xe8e4ea, 0.62);
   sun.position.copy(SUN_DIRECTION).multiplyScalar(80);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
@@ -24,7 +24,7 @@ export function createSunLighting(scene) {
   scene.add(sun);
   scene.add(sun.target);
 
-  const fill = new THREE.DirectionalLight(0xffd6e8, 0.22);
+  const fill = new THREE.DirectionalLight(0xd8c4d0, 0.18);
   fill.position.set(30, 20, -40);
   scene.add(fill);
 
