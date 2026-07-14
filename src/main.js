@@ -104,6 +104,7 @@ cat.cat.rotation.y = cat.facing;
 let fpBlend = 0;
 let lastZone = null;
 let viewPitch = -0.14;
+let wasTrainPassenger = false;
 
 const zoneUI = createZoneUI();
 const bioBar = createBioBar();
@@ -225,8 +226,13 @@ const VIEW_PITCH_MIN = -1.45;
 const VIEW_PITCH_MAX = 0.42;
 const ELEVATOR_VIEW_PITCH_MIN = -1.52;
 const ELEVATOR_VIEW_PITCH_MAX = 1.45;
+const TRAIN_VIEW_PITCH_MIN = -1.35;
+const TRAIN_VIEW_PITCH_MAX = 1.1;
 
 function getViewPitchLimits() {
+  if (lightRail?.isPassenger?.()) {
+    return { min: TRAIN_VIEW_PITCH_MIN, max: TRAIN_VIEW_PITCH_MAX };
+  }
   const inElevator =
     spaceElevator &&
     (spaceElevator.isRiding?.() || spaceElevator.passenger || spaceElevator.isCatInsideCar?.(cat));
@@ -290,16 +296,13 @@ function applyCamera() {
 
   cat.getEyePosition(eyePosition);
   if (onTrain) {
-    const travelYaw = lightRail.getTravelViewYaw();
     const cosPitch = Math.cos(viewPitch);
-    // Sit in the cab looking out the forward windshield.
+    // Free look from the cab seat — mouse / touch / arrows control viewYaw.
     eyePosition.y = lightRail.getPassengerEyeWorldY();
-    eyePosition.x += Math.sin(travelYaw) * 0.2;
-    eyePosition.z += Math.cos(travelYaw) * 0.2;
     eyeLookAt.set(
-      eyePosition.x + Math.sin(travelYaw) * 28 * cosPitch,
-      eyePosition.y - Math.sin(viewPitch) * 28 + 0.4,
-      eyePosition.z + Math.cos(travelYaw) * 28 * cosPitch
+      eyePosition.x + Math.sin(viewYaw) * 28 * cosPitch,
+      eyePosition.y - Math.sin(viewPitch) * 28 + 0.25,
+      eyePosition.z + Math.cos(viewYaw) * 28 * cosPitch
     );
   } else if (inElevator) {
     // Free look from the car — use viewYaw directly so body facing isn't required.
@@ -401,20 +404,22 @@ function animate() {
     checkZones();
   }
 
-  if (lightRail.isRiding() && lightRail.isPassenger()) {
+  if (lightRail.isPassenger()) {
     const travelYaw = lightRail.getTravelViewYaw();
-    viewYaw = lerpAngle(viewYaw, travelYaw, 1 - Math.exp(-5 * dt));
-    viewPitch = THREE.MathUtils.lerp(viewPitch, -0.08, 1 - Math.exp(-5 * dt));
+    if (!wasTrainPassenger) {
+      // Face travel when boarding, then free-look after that.
+      viewYaw = travelYaw;
+      viewPitch = -0.08;
+      wasTrainPassenger = true;
+    }
     cat.facing = travelYaw;
     cat.viewPitch = viewPitch;
     fpBlend = Math.max(fpBlend, THREE.MathUtils.lerp(fpBlend, 1, 1 - Math.exp(-12 * dt)));
-  } else if (lightRail.isPassenger() && !lightRail.isRiding()) {
-    // Boarded and waiting — preview the direction the ride will go.
-    const travelYaw = lightRail.getTravelViewYaw();
-    viewYaw = lerpAngle(viewYaw, travelYaw, 1 - Math.exp(-4 * dt));
-    cat.facing = travelYaw;
-    cat.viewPitch = viewPitch;
-    fpBlend = Math.max(fpBlend, THREE.MathUtils.lerp(fpBlend, 1, 1 - Math.exp(-10 * dt)));
+    if (!input.touchMode && !input.pointerLocked && !input.lookEngaged) {
+      input.lockCursor?.();
+    }
+  } else {
+    wasTrainPassenger = false;
   }
 
   footsteps.update(dt, cat);
