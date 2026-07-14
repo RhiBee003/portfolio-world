@@ -182,6 +182,7 @@ export function createZoneUI(options = {}) {
 }
 
 export let controlMode = null;
+export let handedness = "right";
 
 export function getControlMode() {
   return controlMode;
@@ -232,12 +233,16 @@ export function createInput(canvas, options = {}) {
     document.body.dataset.cursorMode = mode;
   }
 
-  function applyControlMode(mode) {
+  function applyControlMode(mode, hand = "right") {
     controlMode = mode === "mobile" ? "mobile" : "desktop";
+    handedness = hand === "left" ? "left" : "right";
     state.touchMode = controlMode === "mobile";
+    state.handedness = handedness;
     document.body.classList.toggle("control-mobile", state.touchMode);
     document.body.classList.toggle("control-desktop", !state.touchMode);
     document.body.classList.toggle("touch-ui", state.touchMode);
+    document.body.classList.toggle("hand-left", state.touchMode && handedness === "left");
+    document.body.classList.toggle("hand-right", state.touchMode && handedness === "right");
 
     if (state.touchMode) {
       wantsPointerLock = false;
@@ -419,7 +424,9 @@ export function createInput(canvas, options = {}) {
     if (!state.touchMode) unlockCursor();
   });
 
-  // Mobile: left half = look / perspective, right half = move.
+  // Mobile: handedness chooses which half looks vs moves.
+  // Right-handed: left = move, right = look.
+  // Left-handed: left = look, right = move.
   let movePointerId = null;
   let lookPointerId = null;
   let moveOriginX = 0;
@@ -443,6 +450,33 @@ export function createInput(canvas, options = {}) {
 
   function isLeftHalf(clientX) {
     return clientX < window.innerWidth * 0.5;
+  }
+
+  /** Right-handed people look with the right thumb; left-handed with the left. */
+  function isLookHalf(clientX) {
+    const left = isLeftHalf(clientX);
+    return handedness === "left" ? left : !left;
+  }
+
+  function beginLook(e) {
+    if (lookPointerId !== null) return;
+    lookPointerId = e.pointerId;
+    lookLastX = e.clientX;
+    lookLastY = e.clientY;
+    lookDragged = false;
+    state.lookEngaged = true;
+    setCursorMode("look");
+    options.onEngageView?.();
+    canvas.setPointerCapture?.(e.pointerId);
+  }
+
+  function beginMove(e) {
+    if (movePointerId !== null) return;
+    movePointerId = e.pointerId;
+    moveOriginX = e.clientX;
+    moveOriginY = e.clientY;
+    moveDragged = false;
+    canvas.setPointerCapture?.(e.pointerId);
   }
 
   function setTouchStickFromOffset(dx, dy) {
@@ -482,25 +516,11 @@ export function createInput(canvas, options = {}) {
       if (uiBlocksTouch(e.target)) return;
       e.preventDefault();
 
-      if (isLeftHalf(e.clientX)) {
-        if (lookPointerId !== null) return;
-        lookPointerId = e.pointerId;
-        lookLastX = e.clientX;
-        lookLastY = e.clientY;
-        lookDragged = false;
-        state.lookEngaged = true;
-        setCursorMode("look");
-        options.onEngageView?.();
-        canvas.setPointerCapture?.(e.pointerId);
-        return;
+      if (isLookHalf(e.clientX)) {
+        beginLook(e);
+      } else {
+        beginMove(e);
       }
-
-      if (movePointerId !== null) return;
-      movePointerId = e.pointerId;
-      moveOriginX = e.clientX;
-      moveOriginY = e.clientY;
-      moveDragged = false;
-      canvas.setPointerCapture?.(e.pointerId);
     },
     { passive: false }
   );

@@ -504,6 +504,19 @@ body.control-mobile .controls-key-list [data-mobile] {
   display: flex;
 }
 
+body.control-mobile .controls-key-list [data-handedness-left],
+body.control-mobile .controls-key-list [data-handedness-right] {
+  display: none;
+}
+
+body.control-mobile.hand-right .controls-key-list [data-handedness-right] {
+  display: flex;
+}
+
+body.control-mobile.hand-left .controls-key-list [data-handedness-left] {
+  display: flex;
+}
+
 body.control-mobile .ui-dock {
   bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
   width: min(100%, calc(100% - 1rem));
@@ -543,17 +556,27 @@ body.control-mobile .zone-panel h2 {
 .mode-select {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 120;
   display: grid;
   place-items: center;
   padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
     max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
-  background: rgba(244, 213, 227, 0.72);
+  background: rgba(244, 213, 227, 0.86);
   backdrop-filter: blur(10px);
 }
 
 .mode-select[hidden] {
   display: none;
+}
+
+.mode-select-step[hidden] {
+  display: none;
+}
+
+.loading.is-behind-setup {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .mode-select-card {

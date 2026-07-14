@@ -52,28 +52,46 @@
             <li data-desktop><kbd>E</kbd> Ride to the other stop</li>
             <li data-desktop><kbd>Click</kbd> Lock / unlock cursor</li>
             <li data-desktop><kbd>Esc</kbd> Free cursor</li>
-            <li data-mobile hidden>Left drag — Look / perspective</li>
-            <li data-mobile hidden>Right drag — Move your cat</li>
+            <li data-mobile data-handedness-right hidden>Left drag — Move your cat</li>
+            <li data-mobile data-handedness-right hidden>Right drag — Look / perspective</li>
+            <li data-mobile data-handedness-left hidden>Left drag — Look / perspective</li>
+            <li data-mobile data-handedness-left hidden>Right drag — Move your cat</li>
             <li data-mobile hidden>Tap — Jump · board / get off train</li>
             <li data-mobile hidden>Double-tap — Ride to the other stop</li>
           </ul>
         </div>
       </aside>
 
-      <div class="mode-select" id="mode-select" hidden>
+      <div class="mode-select" id="mode-select" aria-live="polite">
         <div class="mode-select-card" role="dialog" aria-labelledby="mode-select-title" aria-modal="true">
           <p class="mode-select-kicker">Portfolio World</p>
-          <h1 id="mode-select-title">Mobile or desktop?</h1>
-          <p class="mode-select-copy">Choose how you want to explore the city.</p>
-          <div class="mode-select-actions">
-            <button type="button" class="mode-select-btn mode-select-btn-mobile" data-mode="mobile">
-              <span class="mode-select-btn-label">Mobile</span>
-              <span class="mode-select-btn-hint">Left look · right move</span>
-            </button>
-            <button type="button" class="mode-select-btn mode-select-btn-desktop" data-mode="desktop">
-              <span class="mode-select-btn-label">Desktop</span>
-              <span class="mode-select-btn-hint">Keyboard &amp; mouse</span>
-            </button>
+          <div class="mode-select-step" data-step="device">
+            <h1 id="mode-select-title">Mobile or desktop?</h1>
+            <p class="mode-select-copy">Choose how you want to explore the city.</p>
+            <div class="mode-select-actions">
+              <button type="button" class="mode-select-btn mode-select-btn-mobile" data-mode="mobile">
+                <span class="mode-select-btn-label">Mobile</span>
+                <span class="mode-select-btn-hint">Touch controls</span>
+              </button>
+              <button type="button" class="mode-select-btn mode-select-btn-desktop" data-mode="desktop">
+                <span class="mode-select-btn-label">Desktop</span>
+                <span class="mode-select-btn-hint">Keyboard &amp; mouse</span>
+              </button>
+            </div>
+          </div>
+          <div class="mode-select-step" data-step="hand" hidden>
+            <h1 id="mode-hand-title">Left or right handed?</h1>
+            <p class="mode-select-copy">This sets which thumb moves and which looks.</p>
+            <div class="mode-select-actions">
+              <button type="button" class="mode-select-btn mode-select-btn-mobile" data-hand="right">
+                <span class="mode-select-btn-label">Right handed</span>
+                <span class="mode-select-btn-hint">Left move · right look</span>
+              </button>
+              <button type="button" class="mode-select-btn" data-hand="left">
+                <span class="mode-select-btn-label">Left handed</span>
+                <span class="mode-select-btn-hint">Left look · right move</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

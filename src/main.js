@@ -513,35 +513,71 @@ async function loadWorldContent() {
 
 function boot() {
   const modeSelect = document.getElementById("mode-select");
+  const deviceStep = modeSelect?.querySelector('[data-step="device"]');
+  const handStep = modeSelect?.querySelector('[data-step="hand"]');
   let started = false;
+  let selectedMode = null;
+  let frameReady = false;
 
-  function startPlay(mode) {
-    if (started) return;
+  function tryStart() {
+    if (started || !frameReady || selectedMode == null) return;
+    if (selectedMode.mode === "mobile" && !selectedMode.hand) return;
     started = true;
-    input.setControlMode(mode);
+    input.setControlMode(selectedMode.mode, selectedMode.hand || "right");
     if (modeSelect) modeSelect.hidden = true;
+    loading.classList.add("is-done");
     syncFrameSize();
-    if (mode === "mobile") {
+    if (selectedMode.mode === "mobile") {
       document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
     }
     bioBar?.playEntrance();
     animate();
   }
 
+  function showHandStep() {
+    if (deviceStep) deviceStep.hidden = true;
+    if (handStep) handStep.hidden = false;
+  }
+
+  if (modeSelect) {
+    modeSelect.hidden = false;
+    modeSelect.addEventListener("click", (e) => {
+      const modeBtn = e.target.closest("[data-mode]");
+      if (modeBtn) {
+        const mode = modeBtn.getAttribute("data-mode") === "mobile" ? "mobile" : "desktop";
+        if (mode === "desktop") {
+          selectedMode = { mode: "desktop", hand: null };
+          tryStart();
+          return;
+        }
+        selectedMode = { mode: "mobile", hand: null };
+        showHandStep();
+        return;
+      }
+
+      const handBtn = e.target.closest("[data-hand]");
+      if (handBtn && selectedMode?.mode === "mobile") {
+        selectedMode = {
+          mode: "mobile",
+          hand: handBtn.getAttribute("data-hand") === "left" ? "left" : "right",
+        };
+        tryStart();
+      }
+    });
+  } else {
+    selectedMode = { mode: "desktop", hand: null };
+  }
+
   requestAnimationFrame(() => {
     applyCamera();
     renderer.render(scene, camera);
-    loading.classList.add("is-done");
-    if (modeSelect) {
-      modeSelect.hidden = false;
-      modeSelect.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-mode]");
-        if (!btn) return;
-        startPlay(btn.getAttribute("data-mode") === "mobile" ? "mobile" : "desktop");
-      });
-    } else {
-      startPlay("desktop");
+    frameReady = true;
+    // Keep the setup card up while the world loads; only finish loading once choices are in.
+    if (!selectedMode) {
+      // Leave loading spinner behind the setup card.
+      loading.classList.add("is-behind-setup");
     }
+    tryStart();
   });
 
   loadWorldContent().catch((err) => {
