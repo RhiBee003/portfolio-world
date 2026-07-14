@@ -104,70 +104,6 @@ function createRidgeMesh(opts) {
   return mesh;
 }
 
-const TITLE_FONT =
-  '"SF Pro Rounded", "Nunito", "Quicksand", ui-rounded, "Segoe UI", system-ui, sans-serif';
-
-function createMountainTitle() {
-  const scale = 2;
-  const nameSize = 72 * scale;
-  const roleSize = 38 * scale;
-  const padX = 48 * scale;
-  const padY = 36 * scale;
-  const name = "Rhiannon Black";
-  const roles = "Developer  ·  UX Designer";
-
-  const measure = document.createElement("canvas").getContext("2d");
-  measure.font = `700 ${nameSize}px ${TITLE_FONT}`;
-  const nameW = measure.measureText(name).width;
-  measure.font = `600 ${roleSize}px ${TITLE_FONT}`;
-  const roleW = measure.measureText(roles).width;
-
-  const width = Math.ceil(Math.max(nameW, roleW) + padX * 2);
-  const height = Math.ceil(padY * 2 + nameSize + roleSize * 1.35);
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillStyle = "#f7eef2";
-  ctx.font = `700 ${nameSize}px ${TITLE_FONT}`;
-  ctx.fillText(name, width / 2, padY + nameSize * 0.52);
-
-  ctx.fillStyle = "#e8c4d4";
-  ctx.font = `600 ${roleSize}px ${TITLE_FONT}`;
-  ctx.fillText(roles, width / 2, padY + nameSize + roleSize * 0.85);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-
-  const worldWidth = 56;
-  const worldHeight = worldWidth * (height / width);
-  const panel = new THREE.Mesh(
-    new THREE.PlaneGeometry(worldWidth, worldHeight),
-    new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      depthWrite: false,
-      fog: false,
-      toneMapped: false,
-      side: THREE.DoubleSide,
-    })
-  );
-  panel.name = "mountain-title";
-  // Tallest ridge crest — slightly forward so it reads against the peaks.
-  panel.position.set(-4, 86, 98);
-  panel.lookAt(-4, 72, 20);
-  panel.renderOrder = 3;
-  panel.frustumCulled = false;
-  return panel;
-}
-
 function createPineSilhouette(x, z, h, tint) {
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.14, h * 0.22, 5),
@@ -255,8 +191,6 @@ export function createMountainLandscape() {
     const tree = createPineSilhouette(x, z, h, pineTint);
     root.add(tree);
   }
-
-  root.add(createMountainTitle());
 
   return root;
 }

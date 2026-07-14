@@ -21,6 +21,7 @@ import { createLightRail, LightRailController } from "./world/lightRail.js";
 import { createFootstepTrail } from "./world/footsteps.js";
 import { worldHeight } from "./world/terrain.js";
 import { createMountainLandscape } from "./world/mountains.js";
+import { createSummitTitle } from "./world/summitTitle.js";
 import { addSpaceNeedleToScene } from "./world/spaceNeedle.js";
 import {
   createSpaceNeedleElevator,
@@ -89,6 +90,9 @@ scene.add(ground);
 const mountains = createMountainLandscape();
 scene.add(mountains);
 
+const summitTitle = createSummitTitle();
+scene.add(summitTitle);
+
 const catMesh = createCat();
 scene.add(catMesh);
 const cat = new CatController(catMesh);
@@ -114,8 +118,9 @@ const spawnTangent = curve.getTangentAt(spawnT).normalize();
 
 cat.position.set(spawnRing.x, worldHeight(spawnRing.x, spawnRing.z), spawnRing.z);
 const roadFacing = Math.atan2(spawnTangent.x, spawnTangent.z);
-let viewYaw = roadFacing + 0.38;
-cat.facing = viewYaw + Math.PI;
+// Look toward the Cascades / summit title first; cat faces down the path.
+let viewYaw = roadFacing + Math.PI;
+cat.facing = roadFacing;
 cat.cat.rotation.y = cat.facing;
 let fpBlend = 0;
 let lastZone = null;
