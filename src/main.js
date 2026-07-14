@@ -573,7 +573,14 @@ function boot() {
 
   function showHandStep() {
     if (deviceStep) deviceStep.hidden = true;
-    if (handStep) handStep.hidden = false;
+    if (handStep) {
+      handStep.hidden = false;
+      handStep.classList.remove("is-enter");
+      void handStep.offsetWidth;
+      handStep.classList.add("is-enter");
+    }
+    const card = modeSelect?.querySelector(".mode-select-card");
+    card?.setAttribute("aria-labelledby", "mode-hand-title");
   }
 
   if (modeSelect) {

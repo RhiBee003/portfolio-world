@@ -12,6 +12,12 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Rhiannon Black · Portfolio World</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
@@ -63,33 +69,81 @@
       </aside>
 
       <div class="mode-select" id="mode-select" aria-live="polite">
+        <div class="mode-select-atmosphere" aria-hidden="true">
+          <span class="mode-blob mode-blob-a"></span>
+          <span class="mode-blob mode-blob-b"></span>
+          <span class="mode-blob mode-blob-c"></span>
+        </div>
         <div class="mode-select-card" role="dialog" aria-labelledby="mode-select-title" aria-modal="true">
-          <p class="mode-select-kicker">Portfolio World</p>
-          <div class="mode-select-step" data-step="device">
-            <h1 id="mode-select-title">Mobile or desktop?</h1>
-            <p class="mode-select-copy">Choose how you want to explore the city.</p>
+          <header class="mode-select-brand">
+            <p class="mode-select-brand-name">Rhiannon Black</p>
+            <p class="mode-select-brand-world">Portfolio World</p>
+          </header>
+
+          <div class="mode-select-progress" aria-hidden="true">
+            <span class="mode-progress-dot is-active" data-step-dot="device"></span>
+            <span class="mode-progress-line"></span>
+            <span class="mode-progress-dot" data-step-dot="hand"></span>
+          </div>
+
+          <div class="mode-select-step is-enter" data-step="device">
+            <p class="mode-select-kicker">Setup · 1 of 2</p>
+            <h1 id="mode-select-title">How are you exploring?</h1>
+            <p class="mode-select-copy">Pick the controls that fit your device.</p>
             <div class="mode-select-actions">
-              <button type="button" class="mode-select-btn mode-select-btn-mobile" data-mode="mobile">
-                <span class="mode-select-btn-label">Mobile</span>
-                <span class="mode-select-btn-hint">Touch controls</span>
+              <button type="button" class="mode-select-btn" data-mode="mobile">
+                <span class="mode-select-btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <rect x="9" y="3" width="14" height="26" rx="3" stroke="currentColor" stroke-width="1.8" />
+                    <circle cx="16" cy="25" r="1.2" fill="currentColor" />
+                  </svg>
+                </span>
+                <span class="mode-select-btn-text">
+                  <span class="mode-select-btn-label">Mobile</span>
+                  <span class="mode-select-btn-hint">Touch drag to move &amp; look</span>
+                </span>
               </button>
-              <button type="button" class="mode-select-btn mode-select-btn-desktop" data-mode="desktop">
-                <span class="mode-select-btn-label">Desktop</span>
-                <span class="mode-select-btn-hint">Keyboard &amp; mouse</span>
+              <button type="button" class="mode-select-btn" data-mode="desktop">
+                <span class="mode-select-btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <rect x="3" y="5" width="26" height="17" rx="2.5" stroke="currentColor" stroke-width="1.8" />
+                    <path d="M10 28h12M16 22v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                </span>
+                <span class="mode-select-btn-text">
+                  <span class="mode-select-btn-label">Desktop</span>
+                  <span class="mode-select-btn-hint">Keyboard &amp; mouse</span>
+                </span>
               </button>
             </div>
           </div>
+
           <div class="mode-select-step" data-step="hand" hidden>
-            <h1 id="mode-hand-title">Left or right handed?</h1>
-            <p class="mode-select-copy">This sets which thumb moves and which looks.</p>
+            <p class="mode-select-kicker">Setup · 2 of 2</p>
+            <h1 id="mode-hand-title">Which hand leads?</h1>
+            <p class="mode-select-copy">This places move and look on opposite thumbs.</p>
             <div class="mode-select-actions">
-              <button type="button" class="mode-select-btn mode-select-btn-mobile" data-hand="right">
-                <span class="mode-select-btn-label">Right handed</span>
-                <span class="mode-select-btn-hint">Left move · right look</span>
+              <button type="button" class="mode-select-btn" data-hand="right">
+                <span class="mode-select-btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <path d="M8 14v10a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4V12a2.5 2.5 0 0 0-5 0V8a2.5 2.5 0 0 0-5 0v4a2.5 2.5 0 1 0-5 0v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span class="mode-select-btn-text">
+                  <span class="mode-select-btn-label">Right handed</span>
+                  <span class="mode-select-btn-hint">Left move · right look</span>
+                </span>
               </button>
               <button type="button" class="mode-select-btn" data-hand="left">
-                <span class="mode-select-btn-label">Left handed</span>
-                <span class="mode-select-btn-hint">Left look · right move</span>
+                <span class="mode-select-btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <path d="M24 14v10a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V12a2.5 2.5 0 0 1 5 0V8a2.5 2.5 0 0 1 5 0v4a2.5 2.5 0 1 1 5 0v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span class="mode-select-btn-text">
+                  <span class="mode-select-btn-label">Left handed</span>
+                  <span class="mode-select-btn-hint">Left look · right move</span>
+                </span>
               </button>
             </div>
           </div>
