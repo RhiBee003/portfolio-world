@@ -9,10 +9,10 @@ const textureLoader = new THREE.TextureLoader();
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const FLOATING_TEXT_COLOR = "#000000";
-/** High-contrast ink — light pink washed out against the cherry world. */
-const PROJECT_TEXT_COLOR = "#1a1216";
-const LINK_TEXT_COLOR = "#7a3048";
 const UNDERLINE_HEX = "#e8a4bc";
+/** Soft pink titles matching the desktop project labels. */
+const PROJECT_TEXT_COLOR = "#e8a4bc";
+const LINK_TEXT_COLOR = "#d489a3";
 const RING_COLOR = 0xe891ad;
 const TEXT_RENDER_SCALE = 2;
 
