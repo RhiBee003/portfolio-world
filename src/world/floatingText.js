@@ -734,7 +734,9 @@ export function animateFloatingText(group, elapsed, catPosition, camera, dt = 0.
     const pathFade = Math.max(ringPathFade, labelPathFade);
 
     const proximityBlend = Math.max(spatialFade, ringProximity * 0.9);
-    let textProximity = pathFade * proximityBlend;
+    // Path fade guides the clean approach; spatial fade still reveals labels when
+    // free-roaming (mobile) walks up to a building off the path centerline.
+    let textProximity = Math.max(pathFade * proximityBlend, spatialFade);
     if (ringProximity > 0.12) {
       textProximity = Math.max(textProximity, ringPathFade * ringProximity);
     }

@@ -57,11 +57,20 @@ export function createBioBar() {
         { duration: DESCEND_MS, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
       );
 
-      anim.onfinish = () => {
-        anim.cancel();
+      const finishEntrance = () => {
+        if (entranceDone) return;
         entranceDone = true;
+        try {
+          anim.cancel();
+        } catch {
+          /* already finished */
+        }
         dockAtBottom();
       };
+
+      anim.onfinish = finishEntrance;
+      // Fullscreen / layout thrash on phones can stall WAAPI; don't gate zones forever.
+      window.setTimeout(finishEntrance, DESCEND_MS + 250);
     });
   }
 

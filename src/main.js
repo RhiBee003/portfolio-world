@@ -5,7 +5,13 @@ import { createCherryBlossoms } from "./world/cherryBlossoms.js";
 import { createCityAsync, createGround, createPathCurve, checkCollision } from "./world/city.js";
 import { createRoadTermini, animateFountain } from "./world/roadTermini.js";
 import { createCat, CatController } from "./world/cat.js";
-import { WAYPOINTS, getWaypointRingPosition, getWaypointRingRadius, getWaypointRingT } from "./world/waypoints.js";
+import {
+  WAYPOINTS,
+  getWaypointRingPosition,
+  getWaypointRingRadius,
+  getWaypointRingT,
+  getWaypointSidePosition,
+} from "./world/waypoints.js";
 import { createZoneUI, createInput, createBioBar, createContextHint } from "./world/ui.js";
 import { createPathArrows, animatePathArrows } from "./world/pathGuide.js";
 import { createSky, animateSky, resizeSky } from "./world/sky.js";
@@ -175,8 +181,8 @@ function setLoadingStatus(text) {
 }
 
 function checkZones() {
-  const zoneRadius = getWaypointRingRadius();
-  const zoneRadiusSq = zoneRadius * zoneRadius;
+  const ringRadius = getWaypointRingRadius();
+  const ringRadiusSq = ringRadius * ringRadius;
   const zonesReady = bioBar?.isEntranceDone?.() ?? true;
 
   let found = null;
@@ -184,11 +190,20 @@ function checkZones() {
   for (const wp of WAYPOINTS) {
     if (wp.id === "hero") continue;
 
-    const trigger = getWaypointRingPosition(wp, curve);
-    const dx = cat.position.x - trigger.x;
-    const dz = cat.position.z - trigger.z;
-    const distSq = dx * dx + dz * dz;
-    if (distSq >= zoneRadiusSq) continue;
+    const ring = getWaypointRingPosition(wp, curve);
+    const side = getWaypointSidePosition(wp, curve);
+    const dxRing = cat.position.x - ring.x;
+    const dzRing = cat.position.z - ring.z;
+    const nearRing = dxRing * dxRing + dzRing * dzRing < ringRadiusSq;
+
+    // Also trigger when walking up to the project building (mobile free-roam often
+    // leaves the path and never hits the narrow ring).
+    const sideRadius = (wp.radius ?? 6) + 3.2;
+    const dxSide = cat.position.x - side.x;
+    const dzSide = cat.position.z - side.z;
+    const nearSide = dxSide * dxSide + dzSide * dzSide < sideRadius * sideRadius;
+
+    if (!nearRing && !nearSide) continue;
 
     if (!found || wp.pathT > found.pathT) {
       found = wp;
@@ -444,11 +459,9 @@ function animate() {
 
   const elapsed = clock.elapsedTime;
   if (floatingText) {
-    // Mobile uses the dock panels for copy — world labels stack as a second text layer.
-    floatingText.visible = !input.touchMode;
-    if (floatingText.visible) {
-      animateFloatingText(floatingText, elapsed, cat.position, camera, dt);
-    }
+    // Always animate world labels; glow is disabled on mobile so text isn’t double-layered.
+    floatingText.visible = true;
+    animateFloatingText(floatingText, elapsed, cat.position, camera, dt);
   }
   animatePathArrows(pathArrows, elapsed);
   animateFountain(terminiGroup, elapsed);
