@@ -160,6 +160,17 @@ function syncFrameSize() {
 
 syncFrameSize();
 
+// Block iOS/Safari long-press select & callout menu while playing.
+document.addEventListener("selectstart", (e) => e.preventDefault());
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+canvas.addEventListener(
+  "touchstart",
+  (e) => {
+    if (e.touches.length === 1) e.preventDefault();
+  },
+  { passive: false }
+);
+
 const input = createInput(canvas, {
   onCanvasClick(e) {
     if (input.pointerLocked) return false;

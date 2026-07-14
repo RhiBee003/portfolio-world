@@ -32,6 +32,11 @@ body {
   color: var(--text-primary);
   -webkit-text-size-adjust: 100%;
   touch-action: none;
+  /* iPhone long-press: block select / callout / copy overlay during play */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
 }
 
 #app {
@@ -58,6 +63,9 @@ body {
   min-height: 100dvh;
   min-height: -webkit-fill-available;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 body[data-cursor-mode="free"] #world-canvas {
