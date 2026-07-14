@@ -51,10 +51,16 @@ export const LIGHT_RAIL_CAR = {
     y: 1.05,
   },
   /**
-   * First-person cabin feel: whole car scales up while boarded so the aisle
+   * First-person cabin feel: car expands while boarded so the aisle
    * reads larger without changing the exterior when viewed from the platform.
    */
   interiorScale: 1.72,
+  /** Extra vertical stretch so floor clearance and standing height feel taller. */
+  interiorScaleY: 2.35,
+  /** Stand a bit taller on the cabin floor while aboard. */
+  passengerFloorY: 0.38,
+  /** Cat mesh scale while walking the cabin. */
+  passengerCatScale: 1.42,
   /** Local walkable half-sizes (before scale) — keeps the cat inside the shell. */
   walkHalfWidth: 0.92,
   walkHalfLength: 9.6,

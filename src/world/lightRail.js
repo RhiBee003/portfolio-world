@@ -611,12 +611,16 @@ function linkMat(hex, opts = {}) {
 }
 
 function carFloorWorldY(train = null) {
-  const s = train?.scale?.x ?? 1;
-  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.floorY * s;
+  const s = train?.scale?.y ?? train?.scale?.x ?? 1;
+  const floor =
+    train && train.userData?.passengerActive
+      ? LIGHT_RAIL_CAR.passengerFloorY
+      : LIGHT_RAIL_CAR.floorY;
+  return LIGHT_RAIL_TRACK_Y + floor * s;
 }
 
 function passengerFeetWorldY(train = null) {
-  const s = train?.scale?.x ?? 1;
+  const s = train?.scale?.y ?? train?.scale?.x ?? 1;
   return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.seat.y * s;
 }
 
@@ -1251,6 +1255,7 @@ export class LightRailController {
   }
 
   setPassengerPresentation(active) {
+    this.system.train.userData.passengerActive = active;
     const exteriorParts = this.system.train.userData.exteriorParts ?? [];
     for (const part of exteriorParts) {
       // Hide the dense exterior shell when aboard so the scaled cabin + windows read clearly.
@@ -1260,11 +1265,18 @@ export class LightRailController {
     if (interior) interior.visible = true;
   }
 
+  setPassengerCatScale(cat, active) {
+    const s = active ? LIGHT_RAIL_CAR.passengerCatScale : 1;
+    cat.cat.scale.setScalar(s);
+  }
+
   updateInteriorScale(dt) {
-    const target = this.passenger ? LIGHT_RAIL_CAR.interiorScale : 1;
-    const next = THREE.MathUtils.lerp(this.interiorScale, target, 1 - Math.exp(-4.5 * dt));
-    this.interiorScale = next;
-    this.system.train.scale.setScalar(next);
+    const targetX = this.passenger ? LIGHT_RAIL_CAR.interiorScale : 1;
+    const targetY = this.passenger ? LIGHT_RAIL_CAR.interiorScaleY : 1;
+    const nextX = THREE.MathUtils.lerp(this.system.train.scale.x, targetX, 1 - Math.exp(-4.5 * dt));
+    const nextY = THREE.MathUtils.lerp(this.system.train.scale.y, targetY, 1 - Math.exp(-4.5 * dt));
+    this.interiorScale = nextX;
+    this.system.train.scale.set(nextX, nextY, nextX);
   }
 
   /** Keep the passenger glued to the car while it moves, clamped inside the aisle. */
@@ -1293,10 +1305,10 @@ export class LightRailController {
   }
 
   clampPassengerLocal(local) {
-    const { walkHalfWidth, walkHalfLength, floorY } = LIGHT_RAIL_CAR;
+    const { walkHalfWidth, walkHalfLength, passengerFloorY } = LIGHT_RAIL_CAR;
     local.x = THREE.MathUtils.clamp(local.x, -walkHalfWidth, walkHalfWidth);
     local.z = THREE.MathUtils.clamp(local.z, -walkHalfLength, walkHalfLength);
-    local.y = floorY;
+    local.y = passengerFloorY;
   }
 
   /** After the player walks in world space, snap back into the cabin shell. */
@@ -1591,9 +1603,9 @@ export class LightRailController {
   }
 
   getDoorWorldPosition(target = this._doorPos) {
-    const { width, platformSide, floorY } = LIGHT_RAIL_CAR;
+    const { width, platformSide, passengerFloorY, floorY } = LIGHT_RAIL_CAR;
     this.system.train.updateMatrixWorld(true);
-    this._local.set(platformSide * (width * 0.28), floorY, 0);
+    this._local.set(platformSide * (width * 0.28), this.passenger ? passengerFloorY : floorY, 0);
     this.system.train.localToWorld(this._local);
     target.copy(this._local);
     return target;
@@ -1699,12 +1711,13 @@ export class LightRailController {
     this.rideT = 0;
     this._hasPassengerLocal = false;
     this.setPassengerPresentation(false);
+    this.setPassengerCatScale(cat, false);
 
     cat.setSeated(false);
     cat.viewPitch = 0;
     this.getDoorWorldPosition(this._worldPos);
     // Exit onto the platform side while the car eases back to exterior scale.
-    this.system.train.scale.setScalar(1);
+    this.system.train.scale.set(1, 1, 1);
     this.interiorScale = 1;
     this.getDoorWorldPosition(this._worldPos);
     cat.position.copy(this._worldPos);
@@ -1725,16 +1738,17 @@ export class LightRailController {
     const yaw = this.system.train.rotation.y;
     this.syncCabFurniture();
     this.setPassengerPresentation(true);
+    this.setPassengerCatScale(cat, true);
 
     if (atDoor) {
       this.getDoorWorldPosition(this._worldPos);
       this._passengerLocal.set(
         LIGHT_RAIL_CAR.platformSide * 0.15,
-        LIGHT_RAIL_CAR.floorY,
+        LIGHT_RAIL_CAR.passengerFloorY,
         0
       );
     } else {
-      this._passengerLocal.set(0, LIGHT_RAIL_CAR.floorY, this.getCabSeatLocalZ() * 0.35);
+      this._passengerLocal.set(0, LIGHT_RAIL_CAR.passengerFloorY, this.getCabSeatLocalZ() * 0.35);
     }
     this.clampPassengerLocal(this._passengerLocal);
     this._hasPassengerLocal = true;
@@ -1770,6 +1784,7 @@ export class LightRailController {
     this.rideT = 0;
     this.passenger = true;
     this.setPassengerPresentation(true);
+    this.setPassengerCatScale(cat, true);
     this.capturePassengerLocal(cat);
     this.applyPassengerLocal(cat);
   }
