@@ -65,7 +65,7 @@ export function createSummitTitle() {
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
 
-  const worldWidth = 88;
+  const worldWidth = 48;
   const planeHeight = worldWidth * (height / width);
   const panel = new THREE.Mesh(
     new THREE.PlaneGeometry(worldWidth, planeHeight),
