@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { buildingMaterial, brickMaterial } from "./materials.js";
 import { addBuildingWindows } from "./buildingWindows.js";
 import { START_OVERPASS_T, getPlayerSpawnPoint, isInSpawnClearance } from "./waypoints.js";
-import { worldHeight, buildingGroundY } from "./terrain.js";
+import { worldHeight, buildingGroundY, drapeRingOnTerrain } from "./terrain.js";
 
 function pushCollision(collisions, x, z, w, d, h, rotY = 0, baseY = 0) {
   const cos = Math.cos(rotY);
@@ -183,9 +183,10 @@ function createEndRoundabout(curve, group, collisions) {
     roughness: 0.92,
     metalness: 0,
   });
-  const ring = new THREE.Mesh(new THREE.RingGeometry(3.8, 6.2, 48), asphalt);
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.set(cx, baseY + 0.025, cz);
+  const ringGeo = new THREE.RingGeometry(3.8, 6.2, 48);
+  drapeRingOnTerrain(ringGeo, cx, cz, 0.025);
+  const ring = new THREE.Mesh(ringGeo, asphalt);
+  ring.position.set(cx, baseY, cz);
   ring.receiveShadow = true;
   ring.frustumCulled = false;
   group.add(ring);

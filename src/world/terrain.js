@@ -50,3 +50,20 @@ export function buildingGroundY(x, z, w, d, rotY = 0, sink = 0.55) {
   }
   return minY - sink;
 }
+
+/**
+ * Remap a flat RingGeometry (XY) onto the hillside around (cx, cz).
+ * Result sits in XZ with Y = terrain delta + lift — no mesh.rotation.x needed.
+ */
+export function drapeRingOnTerrain(geometry, cx, cz, lift = 0.05) {
+  const pos = geometry.attributes.position;
+  const baseY = worldHeight(cx, cz);
+  for (let i = 0; i < pos.count; i += 1) {
+    const lx = pos.getX(i);
+    const ly = pos.getY(i);
+    pos.setXYZ(i, lx, worldHeight(cx + lx, cz + ly) - baseY + lift, ly);
+  }
+  pos.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}

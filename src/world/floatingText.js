@@ -3,7 +3,7 @@ import { pathSideAt, pathCenterAt, closestPathT } from "./pathLayout.js";
 import { WAYPOINTS, RING_T_OFFSET } from "./waypoints.js";
 import { createResumePdfPage, ensureResumePdfLoaded } from "./resumePage.js";
 import { PROJECT_PREVIEWS } from "./projectPreviews.js";
-import { worldHeight } from "./terrain.js";
+import { worldHeight, drapeRingOnTerrain } from "./terrain.js";
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -240,19 +240,21 @@ function createPreviewPanel(previewConfig, phaseSeed) {
   return group;
 }
 
-function createPathRing() {
+function createPathRing(cx, cz) {
+  const geometry = new THREE.RingGeometry(1.4, 2.1, 48);
+  drapeRingOnTerrain(geometry, cx, cz, 0.14);
+
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(1.4, 2.1, 40),
+    geometry,
     new THREE.MeshBasicMaterial({
       color: 0xf0d4de,
       transparent: true,
       opacity: 0,
       depthWrite: false,
       depthTest: true,
+      side: THREE.DoubleSide,
     })
   );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.14;
   ring.renderOrder = 2;
   ring.frustumCulled = false;
   return ring;
@@ -324,7 +326,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.userData.textProximityRadius =
     options.textProximityRadius ?? sideOffset + labelRadius * 1.55;
 
-  const ring = createPathRing();
+  const ring = createPathRing(ringCenter.x, ringCenter.z);
   stop.userData.ring = ring;
   stop.add(ring);
 
@@ -491,7 +493,9 @@ function faceGroup(group, catPosition) {
 
 function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt) {
   stop.userData.ring.material.opacity = ringProximity * 0.55;
-  stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
+  const ringScale = 0.85 + ringProximity * 0.25;
+  // XZ footprint only — Y holds the draped grade.
+  stop.userData.ring.scale.set(ringScale, 1, ringScale);
 
   const fade = smoothstep(textProximity);
   const visible = fade > 0.008;
