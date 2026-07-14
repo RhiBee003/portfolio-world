@@ -5,7 +5,7 @@ import { SPACE_NEEDLE_POSITION, SPACE_NEEDLE_VISTA, blocksSpaceNeedlePlacement, 
 import { blocksLightRailPlacement, blocksWalkwayAndRailStructuresForBuilding, LIGHT_RAIL_DISTRICT, isInLightRailDistrictZ, isNearLightRailStationZ, getLightRailEastBuildingX, getLightRailTrackSamples } from "./lightRailConfig.js";
 import { PATH_POINTS, START_OVERPASS_T, getPlayerSpawnPoint, isInSpawnClearance } from "./waypoints.js";
 import { WORLD_CONFIG } from "./worldConfig.js";
-import { worldHeight } from "./terrain.js";
+import { worldHeight, buildingGroundY } from "./terrain.js";
 
 const CITY = WORLD_CONFIG.city;
 const PATH_SAMPLES = 48;
@@ -92,7 +92,7 @@ function pushCollision(collisions, x, z, w, d, h, rotY, baseY = 0) {
 function addBuilding(group, collisions, x, z, w, d, h, rotY, tone, withCollision = true) {
   if (blocksSpaceNeedlePlacement(x, z, spaceNeedleBuildingPad(w, d))) return;
 
-  const baseY = worldHeight(x, z);
+  const baseY = buildingGroundY(x, z, w, d, rotY);
   const building = new THREE.Group();
   // Upright on the grade — only yaw, never pitch/roll with the hill.
   building.position.set(x, baseY + h / 2, z);

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { buildingMaterial, brickMaterial } from "./materials.js";
 import { addBuildingWindows } from "./buildingWindows.js";
 import { START_OVERPASS_T, getPlayerSpawnPoint, isInSpawnClearance } from "./waypoints.js";
-import { worldHeight } from "./terrain.js";
+import { worldHeight, buildingGroundY } from "./terrain.js";
 
 function pushCollision(collisions, x, z, w, d, h, rotY = 0, baseY = 0) {
   const cos = Math.cos(rotY);
@@ -21,7 +21,7 @@ function pushCollision(collisions, x, z, w, d, h, rotY = 0, baseY = 0) {
 
 function addBox(group, collisions, x, y, z, w, h, d, rotY, mat, collide = true) {
   const isBuilding = collide && h >= 4.5 && w >= 2.5 && d >= 2.5;
-  const baseY = worldHeight(x, z) + y;
+  const baseY = (isBuilding ? buildingGroundY(x, z, w, d, rotY) : worldHeight(x, z)) + y;
 
   if (isBuilding) {
     const building = new THREE.Group();

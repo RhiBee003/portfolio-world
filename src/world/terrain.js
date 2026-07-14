@@ -27,3 +27,26 @@ export function worldHeight(x, z) {
 export function pathSurfaceY(x, z, lift = 0.02) {
   return worldHeight(x, z) + lift;
 }
+
+/**
+ * Y for an upright building base on the hill: lowest footprint corner, then
+ * sink slightly so walls punch through the grade instead of floating above it.
+ */
+export function buildingGroundY(x, z, w, d, rotY = 0, sink = 0.55) {
+  const cos = Math.cos(rotY);
+  const sin = Math.sin(rotY);
+  const hx = w * 0.5;
+  const hz = d * 0.5;
+  let minY = Infinity;
+  for (const [lx, lz] of [
+    [hx, hz],
+    [-hx, hz],
+    [hx, -hz],
+    [-hx, -hz],
+  ]) {
+    const wx = x + lx * cos - lz * sin;
+    const wz = z + lx * sin + lz * cos;
+    minY = Math.min(minY, worldHeight(wx, wz));
+  }
+  return minY - sink;
+}
