@@ -16,6 +16,40 @@ const SKY_FRAGMENT = `
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
   }
 
+  float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    float a = hash21(i);
+    float b = hash21(i + vec2(1.0, 0.0));
+    float c = hash21(i + vec2(0.0, 1.0));
+    float d = hash21(i + vec2(1.0, 1.0));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 4; i++) {
+      v += amp * valueNoise(p);
+      p = p * 2.05 + vec2(13.1, 7.7);
+      amp *= 0.52;
+    }
+    return v;
+  }
+
+  float cloudField(vec3 dir) {
+    if (dir.y < -0.05) return 0.0;
+    vec2 uv = dir.xz / max(dir.y + 0.35, 0.08);
+    float t = uTime * 0.012;
+    float n =
+      fbm(uv * 1.15 + vec2(t * 1.4, t * 0.55)) * 0.62 +
+      fbm(uv * 2.4 - vec2(t * 0.9, -t * 0.7)) * 0.38;
+    float band = smoothstep(-0.02, 0.55, dir.y) * (1.0 - smoothstep(0.72, 0.98, dir.y));
+    float clouds = smoothstep(0.42, 0.72, n) * band;
+    return clamp(clouds, 0.0, 1.0);
+  }
+
   float starLayer(vec3 dir, float density, float size, float layer) {
     if (dir.y < 0.1) return 0.0;
     vec2 uv = dir.xz / (dir.y + 0.45);
@@ -51,9 +85,14 @@ const SKY_FRAGMENT = `
     float blend = smoothstep(-0.12, 0.58, height);
     vec3 sky = mix(bottomColor, topColor, blend);
 
+    float clouds = cloudField(dir);
+    vec3 cloudColor = mix(vec3(0.78, 0.72, 0.78), vec3(0.92, 0.88, 0.93), clouds);
+    sky = mix(sky, cloudColor, clouds * 0.55);
+
     float stars = starField(dir);
-    vec3 starColor = vec3(1.0, 0.98, 0.95) * stars * 0.55;
-    sky += starColor * (0.25 + blend * 0.2);
+    float starGate = 1.0 - clouds * 0.72;
+    vec3 starColor = vec3(1.0, 0.98, 0.95) * stars * 1.65 * starGate;
+    sky += starColor * (0.4 + blend * 0.45);
 
     gl_FragColor = vec4(sky, 1.0);
   }
