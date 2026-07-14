@@ -52,13 +52,26 @@ body {
   overflow: hidden;
 }
 
-.soundtrack-toggle {
+.soundtrack-dock {
   position: fixed;
   top: max(0.85rem, env(safe-area-inset-top));
   left: max(0.85rem, env(safe-area-inset-left));
   z-index: 130;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(22rem, calc(100vw - 1.7rem));
+  pointer-events: none;
+}
+
+.soundtrack-toggle {
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 1;
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
   width: 2.6rem;
   height: 2.6rem;
   padding: 0;
@@ -96,6 +109,35 @@ body {
 .soundtrack-toggle[data-muted="false"] .soundtrack-icon-on,
 .soundtrack-toggle[data-muted="true"] .soundtrack-icon-off {
   display: block;
+}
+
+.soundtrack-credit {
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(28, 18, 24, 0.38);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 246, 249, 0.88);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  text-shadow: 0 1px 6px rgba(16, 8, 12, 0.35);
+  pointer-events: none;
+}
+
+.soundtrack-credit span {
+  font-style: italic;
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .soundtrack-credit {
+    font-size: 0.62rem;
+    padding: 0.3rem 0.55rem;
+  }
 }
 
 #world-canvas {
