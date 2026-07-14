@@ -27,14 +27,6 @@ function configureTextTexture(texture) {
 const PATH_FADE_RANGE = 0.28;
 /** Longer path fade so the resume eases in/out instead of popping. */
 const RESUME_PATH_FADE_RANGE = 0.38;
-const GLOW_MAX_OPACITY = 0.78;
-const MOBILE_GLOW_SCALE = 0.45;
-const LOOK_DOT_START = 0.58;
-const LOOK_DOT_FULL = 0.9;
-
-const _panelWorld = new THREE.Vector3();
-const _toPanel = new THREE.Vector3();
-const _cameraForward = new THREE.Vector3();
 
 function smoothstep(t) {
   const x = THREE.MathUtils.clamp(t, 0, 1);
@@ -130,68 +122,13 @@ function createTextTexture(text, options = {}) {
   return { texture, width: canvas.width / scale, height: canvas.height / scale };
 }
 
-function createGlowTexture(text, options = {}) {
-  const scale = options.renderScale ?? TEXT_RENDER_SCALE;
-  const fontSize = (options.fontSize ?? 56) * scale;
-  const fontWeight = options.fontWeight ?? 600;
-  const maxWidth = (options.maxWidth ?? 720) * scale;
-  const padding = (options.padding ?? 28) * scale;
-
-  const measureCanvas = document.createElement("canvas");
-  const measureCtx = measureCanvas.getContext("2d");
-  measureCtx.font = `${fontWeight} ${fontSize}px ${FONT}`;
-  const lines = wrapLines(measureCtx, text, maxWidth - padding * 2);
-  const lineHeight = fontSize * (options.lineHeight ?? 1.35);
-
-  let textWidth = 0;
-  for (const line of lines) {
-    textWidth = Math.max(textWidth, measureCtx.measureText(line).width);
-  }
-
-  const innerWidth = Math.ceil(textWidth + padding * 2);
-  const innerHeight = Math.ceil(lines.length * lineHeight + padding * 2);
-  const bleed = Math.ceil(fontSize * 2.2);
-
-  const mask = document.createElement("canvas");
-  mask.width = innerWidth;
-  mask.height = innerHeight;
-  const maskCtx = mask.getContext("2d");
-  maskCtx.font = `${fontWeight} ${fontSize}px ${FONT}`;
-  maskCtx.fillStyle = "#ffffff";
-  maskCtx.textAlign = "center";
-  maskCtx.textBaseline = "middle";
-  lines.forEach((line, index) => {
-    const y = padding + lineHeight * index + lineHeight / 2;
-    maskCtx.fillText(line, innerWidth / 2, y);
-  });
-
-  const canvas = document.createElement("canvas");
-  canvas.width = innerWidth + bleed * 2;
-  canvas.height = innerHeight + bleed * 2;
-  const ctx = canvas.getContext("2d");
-  const blurPx = Math.max(6, fontSize * 0.72);
-  ctx.filter = `blur(${blurPx}px)`;
-  ctx.drawImage(mask, bleed, bleed);
-  ctx.filter = "none";
-  ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = "rgba(255, 248, 252, 0.96)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.globalCompositeOperation = "source-over";
-
-  const texture = configureTextTexture(new THREE.CanvasTexture(canvas));
-  return { texture, width: canvas.width / scale, height: canvas.height / scale };
-}
-
 function createTextPanel(text, options = {}) {
   const { texture, width, height } = createTextTexture(text, options);
-  const { texture: glowTexture } = createGlowTexture(text, options);
   const worldWidth = options.worldWidth ?? 10;
   const worldHeight = worldWidth * (height / width);
-  const glowScale = Math.max(glowTexture.image.width / width, glowTexture.image.height / height);
 
   const panel = new THREE.Group();
   const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
-  const glowGeometry = new THREE.PlaneGeometry(worldWidth * glowScale, worldHeight * glowScale);
 
   let backMesh = null;
   if (options.showBackground) {
@@ -216,22 +153,6 @@ function createTextPanel(text, options = {}) {
     panel.add(backMesh);
   }
 
-  const glowMesh = new THREE.Mesh(
-    glowGeometry,
-    new THREE.MeshBasicMaterial({
-      map: glowTexture,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      depthTest: false,
-      fog: false,
-      toneMapped: false,
-      side: THREE.DoubleSide,
-    })
-  );
-  glowMesh.renderOrder = 8;
-  glowMesh.frustumCulled = false;
-
   const textMesh = new THREE.Mesh(
     geometry,
     new THREE.MeshBasicMaterial({
@@ -250,14 +171,9 @@ function createTextPanel(text, options = {}) {
   textMesh.renderOrder = 10;
   textMesh.frustumCulled = false;
 
-  panel.add(glowMesh);
   panel.add(textMesh);
   panel.userData.textMesh = textMesh;
-  panel.userData.glowMesh = glowMesh;
   if (backMesh) panel.userData.backMesh = backMesh;
-  panel.userData.glowLevel = 0;
-  panel.userData.glowMaxOpacity = options.glowMaxOpacity ?? 1;
-  panel.userData.glowProximity = options.glowProximity ?? 0.55;
   panel.userData.href = options.href ?? null;
   panel.userData.baseY = options.y ?? 4;
   panel.userData.phase = options.phase ?? 0;
@@ -520,9 +436,6 @@ export function createPathFloatingLabels(curve) {
           phase: index * 0.8,
           freq: 0.45,
           drift: 0.03,
-          ...(wp.id === "cotton-elder"
-            ? { glowMaxOpacity: 1.35, glowProximity: 0.82 }
-            : {}),
         });
         titlePanel.position.y = 4.8;
         titlePanel.userData.baseY = 4.8;
@@ -579,28 +492,6 @@ function faceGroup(group, catPosition) {
   }
 }
 
-function lookAtPanelFactor(camera, panel) {
-  if (!camera) return 0;
-
-  const textMesh = panel.userData.textMesh;
-  if (textMesh) {
-    textMesh.getWorldPosition(_panelWorld);
-  } else {
-    panel.getWorldPosition(_panelWorld);
-  }
-
-  _toPanel.copy(_panelWorld).sub(camera.position);
-  const dist = _toPanel.length();
-  if (dist < 0.5) return 1;
-
-  _toPanel.multiplyScalar(1 / dist);
-  camera.getWorldDirection(_cameraForward);
-
-  const dot = _cameraForward.dot(_toPanel);
-  if (dot <= LOOK_DOT_START) return 0;
-  return smoothstep((dot - LOOK_DOT_START) / (LOOK_DOT_FULL - LOOK_DOT_START));
-}
-
 function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt) {
   // Stronger floor so pink rings read clearly on the pale path.
   stop.userData.ring.material.opacity = ringProximity * 0.95;
@@ -649,35 +540,15 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
   }
 
   stop.userData.panels.forEach((panel) => {
-    const { baseY, phase, freq, drift, textMesh, glowMesh, backMesh } = panel.userData;
+    const { baseY, phase, freq, drift, textMesh, backMesh } = panel.userData;
     panel.position.y = baseY + Math.sin(elapsed * freq + phase) * drift;
 
     if (backMesh) {
       backMesh.material.opacity = fade * 0.96;
       backMesh.visible = visible;
     }
-    const lookFactor = lookAtPanelFactor(camera, panel);
-    const glowTarget = Math.max(
-      lookFactor,
-      visible ? textProximity * (panel.userData.glowProximity ?? 0.55) : 0
-    );
-    panel.userData.glowLevel = THREE.MathUtils.lerp(
-      panel.userData.glowLevel ?? 0,
-      glowTarget,
-      1 - Math.exp(-9 * dt)
-    );
     textMesh.material.opacity = fade;
     textMesh.visible = visible;
-
-    const mobile = document.body.classList.contains("control-mobile");
-    const glowOpacity = visible
-      ? panel.userData.glowLevel *
-        GLOW_MAX_OPACITY *
-        (panel.userData.glowMaxOpacity ?? 1) *
-        (mobile ? MOBILE_GLOW_SCALE : 1)
-      : 0;
-    glowMesh.material.opacity = glowOpacity;
-    glowMesh.visible = glowOpacity > 0.008;
   });
 
   if (stop.userData.textGroup && catPosition) {
