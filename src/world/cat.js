@@ -366,26 +366,31 @@ export class CatController {
     this.verticalVelocity -= this.gravity * dt;
     this.position.y += this.verticalVelocity * dt;
 
-    const groundY = getGroundY ? getGroundY(this.position.x, this.position.z) : 0;
-    const stepTolerance = getGroundY ? maxStepUp : 0.05;
-    const delta = groundY - this.position.y;
+    if (options.skipGround) {
+      this.verticalVelocity = 0;
+      this.grounded = true;
+    } else {
+      const groundY = getGroundY ? getGroundY(this.position.x, this.position.z) : 0;
+      const stepTolerance = getGroundY ? maxStepUp : 0.05;
+      const delta = groundY - this.position.y;
 
-    if (!getGroundY) {
-      if (this.position.y <= 0) {
-        this.position.y = 0;
-        this.verticalVelocity = 0;
-        this.grounded = true;
-      }
-    } else if (this.verticalVelocity <= 0) {
-      // Climb/stand on any surface within the step budget; fall only if it's far above.
-      if (delta <= stepTolerance && delta >= -0.35) {
-        this.position.y = groundY;
-        this.verticalVelocity = 0;
-        this.grounded = true;
-      } else if (delta > stepTolerance) {
-        this.grounded = false;
-      } else if (this.position.y > groundY + 0.45) {
-        this.grounded = false;
+      if (!getGroundY) {
+        if (this.position.y <= 0) {
+          this.position.y = 0;
+          this.verticalVelocity = 0;
+          this.grounded = true;
+        }
+      } else if (this.verticalVelocity <= 0) {
+        // Climb/stand on any surface within the step budget; fall only if it's far above.
+        if (delta <= stepTolerance && delta >= -0.35) {
+          this.position.y = groundY;
+          this.verticalVelocity = 0;
+          this.grounded = true;
+        } else if (delta > stepTolerance) {
+          this.grounded = false;
+        } else if (this.position.y > groundY + 0.45) {
+          this.grounded = false;
+        }
       }
     }
 

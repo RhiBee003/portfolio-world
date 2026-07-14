@@ -637,20 +637,42 @@ function linkMat(hex, opts = {}) {
   });
 }
 
-function carFloorWorldY(train = null) {
-  const s = train?.scale?.y ?? train?.scale?.x ?? 1;
+const _floorProbe = new THREE.Vector3();
+
+function carFloorWorldY(train = null, wx = null, wz = null) {
   const floor =
     train && train.userData?.passengerActive
       ? LIGHT_RAIL_CAR.passengerFloorY
       : LIGHT_RAIL_CAR.floorY;
-  const bed = train?.position?.y ?? LIGHT_RAIL_TRACK_Y;
-  return bed + floor * s;
+
+  if (train && wx != null && wz != null) {
+    train.updateMatrixWorld(true);
+    // Project onto the pitched cabin floor via the train transform.
+    _floorProbe.set(wx, train.position.y + 8, wz);
+    train.worldToLocal(_floorProbe);
+    _floorProbe.y = floor;
+    train.localToWorld(_floorProbe);
+    return _floorProbe.y;
+  }
+
+  if (train) {
+    train.updateMatrixWorld(true);
+    _floorProbe.set(0, floor, 0);
+    train.localToWorld(_floorProbe);
+    return _floorProbe.y;
+  }
+
+  return LIGHT_RAIL_TRACK_Y + floor;
 }
 
 function passengerFeetWorldY(train = null) {
-  const s = train?.scale?.y ?? train?.scale?.x ?? 1;
-  const bed = train?.position?.y ?? LIGHT_RAIL_TRACK_Y;
-  return bed + LIGHT_RAIL_CAR.seat.y * s;
+  if (train) {
+    train.updateMatrixWorld(true);
+    _floorProbe.set(0, LIGHT_RAIL_CAR.seat.y, 0);
+    train.localToWorld(_floorProbe);
+    return _floorProbe.y;
+  }
+  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.seat.y;
 }
 
 function railTopWorldY(x = 0, z = 0) {
@@ -1448,7 +1470,8 @@ export class LightRailController {
       return;
     }
     this.system.train.updateMatrixWorld(true);
-    this._passengerLocal.set(cat.position.x, cat.position.y, cat.position.z);
+    // High probe avoids pitch-warped local coords if world Y drifted a frame.
+    this._passengerLocal.set(cat.position.x, this.system.train.position.y + 8, cat.position.z);
     this.system.train.worldToLocal(this._passengerLocal);
     this.clampPassengerLocal(this._passengerLocal);
     this._hasPassengerLocal = true;
@@ -1477,7 +1500,8 @@ export class LightRailController {
   syncPassengerWalk(cat) {
     if (!this.passenger) return;
     this.system.train.updateMatrixWorld(true);
-    this._passengerLocal.set(cat.position.x, cat.position.y, cat.position.z);
+    // Use a high probe Y so pitched world→local doesn't warp aisle XZ from a bad height.
+    this._passengerLocal.set(cat.position.x, this.system.train.position.y + 8, cat.position.z);
     this.system.train.worldToLocal(this._passengerLocal);
     this.clampPassengerLocal(this._passengerLocal);
     this.applyPassengerLocal(cat);
@@ -1563,7 +1587,7 @@ export class LightRailController {
 
   getWalkHeight(wx, wz) {
     if (this.passenger) {
-      return carFloorWorldY(this.system.train);
+      return carFloorWorldY(this.system.train, wx, wz);
     }
 
     const heights = [];
@@ -1589,7 +1613,7 @@ export class LightRailController {
 
     // Solid floor inside / on the threshold of the car so you cannot fall through.
     if (this.isOverTrainFloor(wx, wz)) {
-      heights.push(carFloorWorldY(this.system.train));
+      heights.push(carFloorWorldY(this.system.train, wx, wz));
     }
 
     if (heights.length === 0) return null;

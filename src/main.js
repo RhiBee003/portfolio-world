@@ -444,6 +444,7 @@ function animate() {
     const trainCollisions = onTrain ? [] : activeCollisions;
     cat.update(dt, input, trainCollisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw, pathCurve, {
       getGroundY,
+      skipGround: onTrain,
       maxStepUp: onTrain ? 0.12 : onNeedleStairs ? 0.2 : inNeedle ? 0.65 : onRail ? 0.38 : 0.42,
     });
     if (onTrain) {
