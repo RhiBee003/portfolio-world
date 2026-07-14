@@ -1582,7 +1582,9 @@ export class LightRailController {
 
   /** Standing / walking eye height uses the cat; seated keeps a cab raise. */
   getPassengerEyeWorldY() {
-    return passengerFeetWorldY(this.system.train) + 0.72;
+    const train = this.system.train;
+    const scale = LIGHT_RAIL_CAR.passengerCatScale;
+    return passengerFeetWorldY(train) + 0.92 * scale;
   }
 
   getWalkHeight(wx, wz) {

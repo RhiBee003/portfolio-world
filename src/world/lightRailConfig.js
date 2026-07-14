@@ -54,18 +54,18 @@ export const LIGHT_RAIL_CAR = {
    * First-person cabin feel: car expands while boarded so the aisle
    * reads larger without changing the exterior when viewed from the platform.
    */
-  interiorScale: 1.72,
-  /** Extra vertical stretch so floor clearance and standing height feel taller. */
-  interiorScaleY: 2.35,
+  interiorScale: 1.65,
+  /** Vertical cabin stretch — keep closer to XZ so the cat isn’t dwarfed. */
+  interiorScaleY: 1.85,
   /** Lift the visible cabin floor (and cat) above the shell floor while aboard. */
   interiorFloorLift: 0.48,
   /** Stand on the raised cabin floor while aboard (local Y above track bed). */
   passengerFloorY: 0.66,
-  /** Cat mesh scale while walking the cabin. */
-  passengerCatScale: 1.42,
+  /** Cat mesh scale while walking the cabin — tall enough to fill the aisle. */
+  passengerCatScale: 2.35,
   /** Local walkable half-sizes (before scale) — keeps the cat inside the shell. */
-  walkHalfWidth: 0.92,
-  walkHalfLength: 9.6,
+  walkHalfWidth: 0.82,
+  walkHalfLength: 9.4,
 };
 
 /** Seattle Link–style overhead catenary: poles east of guideway, wire centered over tracks. */
