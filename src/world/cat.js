@@ -339,10 +339,10 @@ export class CatController {
 
     if (wish.lengthSq() > 0) {
       wish.normalize();
-      this.walkPhase += dt * (input.sprint ? 14 : 9);
+      this.walkPhase += dt * (input.sprint ? 14 : 9) * (input.touchMode ? 1.15 : 1);
       this.isMoving = true;
 
-      const step = wish.multiplyScalar(speed * dt);
+      const step = wish.multiplyScalar(stepSpeed * dt);
       const nextX = this.position.x + step.x;
       const nextZ = this.position.z + step.z;
       if (!checkCollision(nextX, this.position.z, this.radius, collisions)) {
