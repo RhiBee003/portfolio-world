@@ -323,8 +323,10 @@ function applyCamera() {
   cat.getEyePosition(eyePosition);
   if (onTrain) {
     const cosPitch = Math.cos(viewPitch);
-    // Free look from the cab seat — mouse / touch / arrows control viewYaw.
-    eyePosition.y = lightRail.getPassengerEyeWorldY();
+    // Free look while walking or seated in the cabin — windows show the city.
+    if (cat.isSeated) {
+      eyePosition.y = Math.max(eyePosition.y, lightRail.getPassengerEyeWorldY());
+    }
     eyeLookAt.set(
       eyePosition.x + Math.sin(viewYaw) * 28 * cosPitch,
       eyePosition.y - Math.sin(viewPitch) * 28 + 0.25,
@@ -353,8 +355,8 @@ function applyCamera() {
   const lookZ = THREE.MathUtils.lerp(overviewTarget.z, eyeLookAt.z, easedBlend);
   camera.lookAt(lookX, lookY, lookZ);
 
-  camera.fov = THREE.MathUtils.lerp(50, 68, easedBlend);
-  camera.near = THREE.MathUtils.lerp(0.1, 0.25, easedBlend);
+  camera.fov = THREE.MathUtils.lerp(50, onTrain ? 72 : 68, easedBlend);
+  camera.near = THREE.MathUtils.lerp(0.1, onTrain ? 0.12 : 0.25, easedBlend);
   camera.updateProjectionMatrix();
 
   sceneFog.near = THREE.MathUtils.lerp(35, 55, easedBlend);
@@ -401,11 +403,12 @@ function animate() {
 
   const elevatorInside = spaceElevator?.isCatInsideCar?.(cat) ?? false;
   const lockMovement = spaceElevator ? spaceElevator.update(dt, cat, input) : false;
-  const railLock =
-    !lockMovement && lightRail
-      ? lightRail.update(dt, cat, input, { elevatorInside })
-      : false;
-  const movementLocked = lockMovement || railLock;
+  const onTrain = lightRail.isPassenger();
+  // Train never freezes the cat — cabin walk is synced after update.
+  if (!lockMovement && lightRail) {
+    lightRail.update(dt, cat, input, { elevatorInside });
+  }
+  const movementLocked = lockMovement;
 
   if (lockMovement || elevatorInside || spaceElevator?.passenger) {
     // Stay in first-person free-look while aboard the elevator.
@@ -416,13 +419,17 @@ function animate() {
   }
 
   if (!movementLocked) {
-    const firstPerson = easedBlend > 0.28 || inNeedle;
+    const firstPerson = easedBlend > 0.28 || inNeedle || onTrain;
     // Mobile drag is screen/camera-relative, not path-stickied.
-    const pathCurve = input.touchMode ? null : curve;
-    cat.update(dt, input, activeCollisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw, pathCurve, {
+    const pathCurve = input.touchMode || onTrain ? null : curve;
+    const trainCollisions = onTrain ? [] : activeCollisions;
+    cat.update(dt, input, trainCollisions, checkCollision, firstPerson ? "firstPerson" : "overview", viewYaw, pathCurve, {
       getGroundY,
-      maxStepUp: onNeedleStairs ? 0.2 : inNeedle ? 0.65 : onRail ? 0.38 : 0.42,
+      maxStepUp: onTrain ? 0.12 : onNeedleStairs ? 0.2 : inNeedle ? 0.65 : onRail ? 0.38 : 0.42,
     });
+    if (onTrain) {
+      lightRail.syncPassengerWalk(cat);
+    }
     if (input.touchMode && cat.wantsMove(input) && !firstPerson && !input.isTouchLooking?.()) {
       // Keep the camera behind the cat while dragging, unless looking with left thumb.
       viewYaw = lerpAngle(viewYaw, cat.facing + Math.PI, 1 - Math.exp(-4 * dt));
@@ -430,16 +437,18 @@ function animate() {
     checkZones();
   }
 
-  if (lightRail.isPassenger()) {
-    const travelYaw = lightRail.getTravelViewYaw();
+  if (onTrain) {
     if (!wasTrainPassenger) {
-      // Face travel when boarding, then free-look after that.
-      viewYaw = travelYaw;
+      // Face travel when boarding, then free-look / walk after that.
+      viewYaw = lightRail.getTravelViewYaw();
       viewPitch = -0.08;
       wasTrainPassenger = true;
     }
-    cat.facing = travelYaw;
     cat.viewPitch = viewPitch;
+    if (!cat.isSeated) {
+      cat.facing = viewYaw;
+      cat.cat.rotation.y = viewYaw;
+    }
     fpBlend = Math.max(fpBlend, THREE.MathUtils.lerp(fpBlend, 1, 1 - Math.exp(-12 * dt)));
     if (!input.touchMode && !input.pointerLocked && !input.lookEngaged) {
       input.lockCursor?.();

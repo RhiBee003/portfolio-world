@@ -50,6 +50,14 @@ export const LIGHT_RAIL_CAR = {
     cabinOffset: 2.35,
     y: 1.05,
   },
+  /**
+   * First-person cabin feel: whole car scales up while boarded so the aisle
+   * reads larger without changing the exterior when viewed from the platform.
+   */
+  interiorScale: 1.72,
+  /** Local walkable half-sizes (before scale) — keeps the cat inside the shell. */
+  walkHalfWidth: 0.92,
+  walkHalfLength: 9.6,
 };
 
 /** Seattle Link–style overhead catenary: poles east of guideway, wire centered over tracks. */

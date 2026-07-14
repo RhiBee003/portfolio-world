@@ -606,16 +606,29 @@ function linkMat(hex, opts = {}) {
   });
 }
 
-function carFloorWorldY() {
-  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.floorY;
+function carFloorWorldY(train = null) {
+  const s = train?.scale?.x ?? 1;
+  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.floorY * s;
 }
 
-function passengerFeetWorldY() {
-  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.seat.y;
+function passengerFeetWorldY(train = null) {
+  const s = train?.scale?.x ?? 1;
+  return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_CAR.seat.y * s;
 }
 
 function railTopWorldY() {
   return LIGHT_RAIL_TRACK_Y + LIGHT_RAIL_RAIL.topAboveBed;
+}
+
+function createSeatUnit(mat, backMat) {
+  const seat = new THREE.Group();
+  const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.14, 0.52), mat);
+  cushion.position.y = 0.07;
+  seat.add(cushion);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.55, 0.08), backMat);
+  back.position.set(0, 0.38, -0.22);
+  seat.add(back);
+  return seat;
 }
 
 /**
@@ -862,32 +875,97 @@ function createLightRailVehicle() {
   contactHead.position.set(0, height + pantographReach - 0.05, 1.2);
   train.add(contactHead);
 
-  // Floor + cab seat furniture.
+  // Floor + longitudinal seating (aisle down the middle).
+  const interior = new THREE.Group();
+  interior.name = "train-interior";
+  train.add(interior);
+
   const floor = new THREE.Mesh(
-    new THREE.BoxGeometry(width - 0.5, 0.06, length - 3.8),
+    new THREE.BoxGeometry(width - 0.35, 0.06, length - 2.6),
     linkMat(0x6a7078, { roughness: 0.92 })
   );
   floor.position.set(0, floorY, 0);
-  train.add(floor);
+  interior.add(floor);
+
+  const seatMat = linkMat(0x4a5560, { roughness: 0.85 });
+  const seatBackMat = linkMat(0x3a4550, { roughness: 0.88 });
+  const seatPads = [];
+  const seatZs = [-7.2, -5.4, -3.6, -1.8, 1.8, 3.6, 5.4, 7.2];
+  for (const side of [-1, 1]) {
+    for (const z of seatZs) {
+      const unit = createSeatUnit(seatMat, seatBackMat);
+      unit.position.set(side * (halfW - 0.58), floorY + 0.42, z);
+      unit.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+      interior.add(unit);
+      seatPads.push({
+        x: side * (halfW - 0.58),
+        z,
+        halfX: 0.38,
+        halfZ: 0.32,
+        feetY: LIGHT_RAIL_CAR.seat.y,
+      });
+    }
+  }
+
+  // Interior window glass — readable from the aisle after cabin scale-up.
+  for (const side of [-1, 1]) {
+    const wallLower = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.95, length - 3.2),
+      whiteMat
+    );
+    wallLower.position.set(side * (halfW - 0.14), floorY + 0.72, 0);
+    interior.add(wallLower);
+
+    const wallUpper = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.45, length - 3.2),
+      whiteMat
+    );
+    wallUpper.position.set(side * (halfW - 0.14), floorY + 2.35, 0);
+    interior.add(wallUpper);
+
+    for (const z of [-6, -2, 2, 6]) {
+      const pane = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 1.15, 2.4),
+        clearGlass
+      );
+      pane.position.set(side * (halfW - 0.08), floorY + 1.75, z);
+      pane.renderOrder = 2;
+      interior.add(pane);
+    }
+  }
+
+  // Soft end glass so you can look forward/back out of the cabs.
+  for (const sign of [-1, 1]) {
+    const endGlass = new THREE.Mesh(
+      new THREE.BoxGeometry(width - 0.7, 1.2, 0.04),
+      clearGlass
+    );
+    endGlass.position.set(0, floorY + 1.55, sign * (halfL - 1.35));
+    endGlass.renderOrder = 2;
+    interior.add(endGlass);
+  }
 
   const { seat } = LIGHT_RAIL_CAR;
   const cabZ = halfL - seat.cabinOffset;
   const bench = new THREE.Mesh(
     new THREE.BoxGeometry(0.72, 0.34, 0.8),
-    linkMat(0x4a5560, { roughness: 0.85 })
+    seatMat
   );
   bench.position.set(seat.x, seat.y - 0.28, cabZ - 0.35);
-  train.add(bench);
+  interior.add(bench);
   train.userData.bench = bench;
   train.userData.cabSeatZ = cabZ;
 
   const seatBack = new THREE.Mesh(
     new THREE.BoxGeometry(0.68, 0.68, 0.1),
-    linkMat(0x3a4550, { roughness: 0.88 })
+    seatBackMat
   );
   seatBack.position.set(seat.x, seat.y + 0.14, cabZ - 0.7);
-  train.add(seatBack);
+  interior.add(seatBack);
   train.userData.seatBack = seatBack;
+  train.userData.interior = interior;
+  train.userData.seatPads = seatPads;
+  train.userData.exteriorParts = [];
 
   // Fallback lights if cab markers didn't assign.
   if (!train.userData.headlight) {
@@ -910,6 +988,12 @@ function createLightRailVehicle() {
   }
 
   train.userData.platformSide = platformSide;
+
+  // Everything except the walkable interior shell is treated as exterior skin.
+  train.children.forEach((child) => {
+    if (child !== interior) train.userData.exteriorParts.push(child);
+  });
+
   return train;
 }
 
@@ -1124,9 +1208,12 @@ export class LightRailController {
     this.passenger = false;
     this.wasInside = false;
     this.boardingCooldown = 0;
+    this.interiorScale = 1;
     this._worldPos = new THREE.Vector3();
     this._doorPos = new THREE.Vector3();
     this._local = new THREE.Vector3();
+    this._passengerLocal = new THREE.Vector3();
+    this._hasPassengerLocal = false;
   }
 
   getState() {
@@ -1147,11 +1234,101 @@ export class LightRailController {
   }
 
   locksMovement() {
-    return this.isRiding() || this.passenger;
+    // Passengers walk the cabin; the controller carries them with the car instead.
+    return false;
   }
 
   isPassenger() {
     return this.passenger;
+  }
+
+  getTrainScale() {
+    return this.system.train.scale.x || 1;
+  }
+
+  setPassengerPresentation(active) {
+    const exteriorParts = this.system.train.userData.exteriorParts ?? [];
+    for (const part of exteriorParts) {
+      // Hide the dense exterior shell when aboard so the scaled cabin + windows read clearly.
+      part.visible = !active;
+    }
+    const interior = this.system.train.userData.interior;
+    if (interior) interior.visible = true;
+  }
+
+  updateInteriorScale(dt) {
+    const target = this.passenger ? LIGHT_RAIL_CAR.interiorScale : 1;
+    const next = THREE.MathUtils.lerp(this.interiorScale, target, 1 - Math.exp(-4.5 * dt));
+    this.interiorScale = next;
+    this.system.train.scale.setScalar(next);
+  }
+
+  /** Keep the passenger glued to the car while it moves, clamped inside the aisle. */
+  capturePassengerLocal(cat) {
+    if (!this.passenger) {
+      this._hasPassengerLocal = false;
+      return;
+    }
+    this.system.train.updateMatrixWorld(true);
+    this._passengerLocal.set(cat.position.x, cat.position.y, cat.position.z);
+    this.system.train.worldToLocal(this._passengerLocal);
+    this.clampPassengerLocal(this._passengerLocal);
+    this._hasPassengerLocal = true;
+  }
+
+  applyPassengerLocal(cat) {
+    if (!this.passenger || !this._hasPassengerLocal) return;
+    this.clampPassengerLocal(this._passengerLocal);
+    this.system.train.updateMatrixWorld(true);
+    this._worldPos.copy(this._passengerLocal);
+    this.system.train.localToWorld(this._worldPos);
+    cat.position.copy(this._worldPos);
+    cat.cat.position.set(cat.position.x, cat.position.y, cat.position.z);
+    cat.grounded = true;
+    cat.verticalVelocity = 0;
+  }
+
+  clampPassengerLocal(local) {
+    const { walkHalfWidth, walkHalfLength, floorY } = LIGHT_RAIL_CAR;
+    local.x = THREE.MathUtils.clamp(local.x, -walkHalfWidth, walkHalfWidth);
+    local.z = THREE.MathUtils.clamp(local.z, -walkHalfLength, walkHalfLength);
+    local.y = floorY;
+  }
+
+  /** After the player walks in world space, snap back into the cabin shell. */
+  syncPassengerWalk(cat) {
+    if (!this.passenger) return;
+    this.system.train.updateMatrixWorld(true);
+    this._passengerLocal.set(cat.position.x, cat.position.y, cat.position.z);
+    this.system.train.worldToLocal(this._passengerLocal);
+    this.clampPassengerLocal(this._passengerLocal);
+    this.applyPassengerLocal(cat);
+    this.updateSeatPose(cat);
+  }
+
+  updateSeatPose(cat) {
+    if (!this.passenger) return;
+    const pads = this.system.train.userData.seatPads ?? [];
+    const moving = Boolean(cat.isMoving);
+    let onSeat = false;
+    for (const pad of pads) {
+      if (
+        Math.abs(this._passengerLocal.x - pad.x) < pad.halfX &&
+        Math.abs(this._passengerLocal.z - pad.z) < pad.halfZ
+      ) {
+        onSeat = true;
+        break;
+      }
+    }
+    const cabZ = this.getCabSeatLocalZ();
+    if (Math.abs(this._passengerLocal.x) < 0.45 && Math.abs(this._passengerLocal.z - cabZ) < 0.7) {
+      onSeat = true;
+    }
+    if (onSeat && !moving) {
+      cat.setSeated(true);
+    } else if (moving || !onSeat) {
+      cat.setSeated(false);
+    }
   }
 
   /** Local Z of the cab seat for the current travel direction. */
@@ -1195,20 +1372,20 @@ export class LightRailController {
   getSeatWorldPosition(target = this._worldPos) {
     const { seat } = LIGHT_RAIL_CAR;
     this.system.train.updateMatrixWorld(true);
-    this._local.set(seat.x, 0, this.getCabSeatLocalZ());
+    this._local.set(seat.x, LIGHT_RAIL_CAR.floorY, this.getCabSeatLocalZ());
     this.system.train.localToWorld(this._local);
-    target.set(this._local.x, passengerFeetWorldY(), this._local.z);
+    target.copy(this._local);
     return target;
   }
 
-  /** Eye height while seated in the cab (above feet). */
+  /** Standing / walking eye height uses the cat; seated keeps a cab raise. */
   getPassengerEyeWorldY() {
-    return passengerFeetWorldY() + 0.72;
+    return passengerFeetWorldY(this.system.train) + 0.72;
   }
 
   getWalkHeight(wx, wz) {
-    if (this.passenger || this.isRiding()) {
-      return passengerFeetWorldY();
+    if (this.passenger) {
+      return carFloorWorldY(this.system.train);
     }
 
     const heights = [];
@@ -1234,7 +1411,7 @@ export class LightRailController {
 
     // Solid floor inside / on the threshold of the car so you cannot fall through.
     if (this.isOverTrainFloor(wx, wz)) {
-      heights.push(carFloorWorldY());
+      heights.push(carFloorWorldY(this.system.train));
     }
 
     if (heights.length === 0) return null;
@@ -1243,9 +1420,12 @@ export class LightRailController {
 
   isOverTrainFloor(wx, wz) {
     this.system.train.updateMatrixWorld(true);
-    this._local.set(wx, carFloorWorldY(), wz);
+    this._local.set(wx, 0, wz);
     this.system.train.worldToLocal(this._local);
-    const { length, width } = LIGHT_RAIL_CAR;
+    const { length, width, walkHalfWidth, walkHalfLength } = LIGHT_RAIL_CAR;
+    if (this.passenger) {
+      return Math.abs(this._local.z) <= walkHalfLength + 0.05 && Math.abs(this._local.x) <= walkHalfWidth + 0.05;
+    }
     return Math.abs(this._local.z) < length * 0.5 && Math.abs(this._local.x) < width * 0.5;
   }
 
@@ -1393,27 +1573,25 @@ export class LightRailController {
     this._local.set(wx, wy, wz);
     this.system.train.worldToLocal(this._local);
 
-    const { length, width } = LIGHT_RAIL_CAR;
-    const floorWorld = carFloorWorldY();
-    const seatWorld = passengerFeetWorldY();
+    const { walkHalfWidth, walkHalfLength, length, width } = LIGHT_RAIL_CAR;
+    const floorWorld = carFloorWorldY(this.system.train);
+    const halfW = this.passenger ? walkHalfWidth + 0.15 : width * 0.42;
+    const halfL = this.passenger ? walkHalfLength + 0.2 : length * 0.48;
 
     return (
-      Math.abs(this._local.z) < length * 0.48 &&
-      Math.abs(this._local.x) < width * 0.42 &&
-      wy >= floorWorld - 0.2 &&
-      wy <= seatWorld + 0.55
+      Math.abs(this._local.z) < halfL &&
+      Math.abs(this._local.x) < halfW &&
+      wy >= floorWorld - 0.35 &&
+      wy <= floorWorld + 2.4
     );
   }
 
   getDoorWorldPosition(target = this._doorPos) {
-    const { width, floorY, platformSide } = LIGHT_RAIL_CAR;
+    const { width, platformSide, floorY } = LIGHT_RAIL_CAR;
     this.system.train.updateMatrixWorld(true);
-    this.system.train.getWorldPosition(target);
-    const yaw = this.system.train.rotation.y;
-    const offsetX = platformSide * (width * 0.42 + 0.18);
-    target.x += Math.cos(yaw) * offsetX;
-    target.z -= Math.sin(yaw) * offsetX;
-    target.y = carFloorWorldY();
+    this._local.set(platformSide * (width * 0.28), floorY, 0);
+    this.system.train.localToWorld(this._local);
+    target.copy(this._local);
     return target;
   }
 
@@ -1439,7 +1617,10 @@ export class LightRailController {
 
   getContextHint(cat, options = {}) {
     if (this.isRiding() && this.passenger) {
-      return this.formatContextHint("Light rail", "Riding — hold on until the next station");
+      return this.formatContextHint(
+        "Light rail",
+        "Walk the cabin · look out the windows — stay aboard until the next stop"
+      );
     }
     if (this.passenger && this.isPassengerAtStation()) {
       return this.formatContextHint(
@@ -1512,9 +1693,15 @@ export class LightRailController {
     this.passenger = false;
     this.boardingCooldown = LIGHT_RAIL_BOARD_COOLDOWN;
     this.rideT = 0;
+    this._hasPassengerLocal = false;
+    this.setPassengerPresentation(false);
 
     cat.setSeated(false);
     cat.viewPitch = 0;
+    this.getDoorWorldPosition(this._worldPos);
+    // Exit onto the platform side while the car eases back to exterior scale.
+    this.system.train.scale.setScalar(1);
+    this.interiorScale = 1;
     this.getDoorWorldPosition(this._worldPos);
     cat.position.copy(this._worldPos);
     cat.cat.position.set(cat.position.x, cat.position.y, cat.position.z);
@@ -1528,35 +1715,32 @@ export class LightRailController {
     this.wasInside = this.isInsideTrain(cat);
   }
 
+  /** Place the cat in the aisle (standing) when boarding. */
   applyCatToTrain(cat, atDoor = false) {
     this.system.train.updateMatrixWorld(true);
     const yaw = this.system.train.rotation.y;
     this.syncCabFurniture();
+    this.setPassengerPresentation(true);
 
     if (atDoor) {
       this.getDoorWorldPosition(this._worldPos);
+      this._passengerLocal.set(
+        LIGHT_RAIL_CAR.platformSide * 0.15,
+        LIGHT_RAIL_CAR.floorY,
+        0
+      );
     } else {
-      this.getSeatWorldPosition(this._worldPos);
+      this._passengerLocal.set(0, LIGHT_RAIL_CAR.floorY, this.getCabSeatLocalZ() * 0.35);
     }
+    this.clampPassengerLocal(this._passengerLocal);
+    this._hasPassengerLocal = true;
+    this.applyPassengerLocal(cat);
 
-    cat.position.copy(this._worldPos);
-    cat.cat.position.set(cat.position.x, cat.position.y, cat.position.z);
-    cat.grounded = true;
-    cat.verticalVelocity = 0;
-    cat.isMoving = false;
-
-    if (atDoor) {
-      cat.setSeated(false);
-      cat.facing = yaw + Math.PI;
-      cat.viewPitch = 0;
-      cat.resetWalkPose();
-    } else {
-      cat.setSeated(true);
-      cat.facing = this.getTravelViewYaw();
-      cat.viewPitch = -0.06;
-      // Keep seated pose — do not resetWalkPose (that forced standing every frame).
-    }
+    cat.setSeated(false);
+    cat.facing = atDoor ? yaw + Math.PI : this.getTravelViewYaw();
+    cat.viewPitch = -0.04;
     cat.cat.rotation.y = cat.facing;
+    cat.resetWalkPose();
   }
 
   canInteract(cat, options = {}) {
@@ -1567,28 +1751,23 @@ export class LightRailController {
     this.state = nextState;
     this.pathT = pathT;
     this.rideT = 0;
-    this.passenger = false;
-    this.boardingCooldown = LIGHT_RAIL_BOARD_COOLDOWN;
-    cat.setSeated(false);
-    cat.viewPitch = 0;
-    this.getDoorWorldPosition(this._worldPos);
-    cat.position.copy(this._worldPos);
-    cat.cat.position.set(cat.position.x, cat.position.y, cat.position.z);
-    cat.grounded = true;
-    cat.verticalVelocity = 0;
-    const yaw = this.system.train.rotation.y;
-    cat.facing = yaw + Math.PI;
-    cat.cat.rotation.y = cat.facing;
-    cat.resetWalkPose();
-    this.wasInside = this.isInsideTrain(cat);
+    // Stay aboard at the destination so you can walk around and choose when to get off.
+    this.passenger = true;
     this.positionTrain();
+    this.capturePassengerLocal(cat);
+    this.applyPassengerLocal(cat);
+    this.setPassengerPresentation(true);
+    cat.setSeated(false);
+    cat.resetWalkPose();
   }
 
   beginRide(cat, forward) {
     this.state = forward ? "ridingForward" : "ridingBackward";
     this.rideT = 0;
     this.passenger = true;
-    this.applyCatToTrain(cat, false);
+    this.setPassengerPresentation(true);
+    this.capturePassengerLocal(cat);
+    this.applyPassengerLocal(cat);
   }
 
   update(dt, cat, input, options = {}) {
@@ -1596,25 +1775,28 @@ export class LightRailController {
       this.boardingCooldown = Math.max(0, this.boardingCooldown - dt);
     }
 
+    this.capturePassengerLocal(cat);
     this.positionTrain();
+    this.updateInteriorScale(dt);
+    this.applyPassengerLocal(cat);
 
     const inside = this.isInsideTrain(cat);
     if (!inside) this.wasInside = false;
 
     if (this.state === "idleAtStart") {
       if (this.tryDeboard(cat, input)) return false;
-      if (this.tryBoard(cat, input, options)) return true;
-      if (this.tryDepart(cat, input)) return true;
+      if (this.tryBoard(cat, input, options)) return false;
+      if (this.tryDepart(cat, input)) return false;
       this.wasInside = inside;
-      return this.passenger;
+      return false;
     }
 
     if (this.state === "idleAtEnd") {
       if (this.tryDeboard(cat, input)) return false;
-      if (this.tryBoard(cat, input, options)) return true;
-      if (this.tryDepart(cat, input)) return true;
+      if (this.tryBoard(cat, input, options)) return false;
+      if (this.tryDepart(cat, input)) return false;
       this.wasInside = inside;
-      return this.passenger;
+      return false;
     }
 
     if (this.state === "ridingForward") {
@@ -1623,12 +1805,14 @@ export class LightRailController {
       this.rideT += dt / LIGHT_RAIL_RIDE_DURATION;
       const eased = easeInOut(Math.min(1, this.rideT));
       this.pathT = THREE.MathUtils.lerp(LIGHT_RAIL_START_T, LIGHT_RAIL_END_T, eased);
+      this.capturePassengerLocal(cat);
       this.positionTrain();
-      if (this.passenger) this.applyCatToTrain(cat, false);
+      this.updateInteriorScale(dt);
+      this.applyPassengerLocal(cat);
       if (this.rideT >= 1) {
         this.finishRide(cat, "idleAtEnd", LIGHT_RAIL_END_T);
       }
-      return true;
+      return false;
     }
 
     if (this.state === "ridingBackward") {
@@ -1636,12 +1820,14 @@ export class LightRailController {
       this.rideT += dt / LIGHT_RAIL_RIDE_DURATION;
       const eased = easeInOut(Math.min(1, this.rideT));
       this.pathT = THREE.MathUtils.lerp(LIGHT_RAIL_END_T, LIGHT_RAIL_START_T, eased);
+      this.capturePassengerLocal(cat);
       this.positionTrain();
-      if (this.passenger) this.applyCatToTrain(cat, false);
+      this.updateInteriorScale(dt);
+      this.applyPassengerLocal(cat);
       if (this.rideT >= 1) {
         this.finishRide(cat, "idleAtStart", LIGHT_RAIL_START_T);
       }
-      return true;
+      return false;
     }
 
     return false;
