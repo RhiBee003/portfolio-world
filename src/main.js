@@ -526,11 +526,15 @@ async function loadWorldContent() {
   updateCherryPetals = cherryBlossoms.updateCherryPetals;
 
   setLoadingStatus("Preparing signs…");
-  const floatingTextModule = await import("./world/floatingText.js");
-  floatingText = floatingTextModule.createPathFloatingLabels(curve);
-  animateFloatingText = floatingTextModule.animateFloatingText;
-  pickFloatingLink = floatingTextModule.pickFloatingLink;
-  scene.add(floatingText);
+  try {
+    const floatingTextModule = await import("./world/floatingText.js");
+    floatingText = floatingTextModule.createPathFloatingLabels(curve);
+    animateFloatingText = floatingTextModule.animateFloatingText;
+    pickFloatingLink = floatingTextModule.pickFloatingLink;
+    scene.add(floatingText);
+  } catch (err) {
+    console.error("Floating labels failed to load", err);
+  }
 }
 
 function boot() {

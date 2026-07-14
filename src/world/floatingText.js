@@ -9,17 +9,11 @@ const textureLoader = new THREE.TextureLoader();
 const FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
 const FLOATING_TEXT_COLOR = "#000000";
+/** High-contrast ink — light pink washed out against the cherry world. */
+const PROJECT_TEXT_COLOR = "#1a1216";
+const LINK_TEXT_COLOR = "#7a3048";
 const UNDERLINE_HEX = "#e8a4bc";
-
-function lightenHex(hex, amount) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const lift = (channel) => Math.min(255, Math.round(channel + (255 - channel) * amount));
-  return `#${lift(r).toString(16).padStart(2, "0")}${lift(g).toString(16).padStart(2, "0")}${lift(b).toString(16).padStart(2, "0")}`;
-}
-
-const PROJECT_TEXT_COLOR = lightenHex(UNDERLINE_HEX, 0.1);
+const RING_COLOR = 0xe891ad;
 const TEXT_RENDER_SCALE = 2;
 
 function configureTextTexture(texture) {
@@ -30,10 +24,11 @@ function configureTextTexture(texture) {
   return texture;
 }
 /** Path-t distance ahead of the cat where labels begin fading in. */
-const PATH_FADE_RANGE = 0.19;
+const PATH_FADE_RANGE = 0.28;
 /** Longer path fade so the resume eases in/out instead of popping. */
-const RESUME_PATH_FADE_RANGE = 0.34;
-const GLOW_MAX_OPACITY = 0.72;
+const RESUME_PATH_FADE_RANGE = 0.38;
+const GLOW_MAX_OPACITY = 0.78;
+const MOBILE_GLOW_SCALE = 0.45;
 const LOOK_DOT_START = 0.58;
 const LOOK_DOT_FULL = 0.9;
 
@@ -243,7 +238,8 @@ function createTextPanel(text, options = {}) {
       map: texture,
       transparent: true,
       opacity: 0,
-      alphaTest: 0.12,
+      // Low alphaTest so soft canvas glyphs still show while fading in.
+      alphaTest: 0.02,
       depthWrite: false,
       depthTest: false,
       fog: false,
@@ -330,18 +326,21 @@ function createPreviewPanel(previewConfig, phaseSeed) {
 
 function createPathRing() {
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(1.4, 2.1, 40),
+    new THREE.RingGeometry(1.55, 2.35, 48),
     new THREE.MeshBasicMaterial({
-      color: 0xf0d4de,
+      color: RING_COLOR,
       transparent: true,
       opacity: 0,
       depthWrite: false,
-      depthTest: true,
+      depthTest: false,
+      fog: false,
+      toneMapped: false,
+      side: THREE.DoubleSide,
     })
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.14;
-  ring.renderOrder = 2;
+  ring.position.y = 0.2;
+  ring.renderOrder = 4;
   ring.frustumCulled = false;
   return ring;
 }
@@ -410,7 +409,7 @@ function createLabelStop(curve, triggerT, side, sideOffset, proximityRadius, bui
   stop.userData.textAnchor = { x: sidePos.x, z: sidePos.z };
   const labelRadius = proximityRadius / 1.8;
   stop.userData.textProximityRadius =
-    options.textProximityRadius ?? sideOffset + labelRadius * 1.25;
+    options.textProximityRadius ?? sideOffset + labelRadius * 1.55;
 
   const ring = createPathRing();
   stop.userData.ring = ring;
@@ -467,7 +466,7 @@ export function createPathFloatingLabels(curve) {
       wp.pathT,
       wp.side,
       wp.sideOffset,
-      wp.radius * 1.8,
+      wp.radius * 2.4,
       (textGroup, panels) => {
         if (wp.id === "hero") return;
 
@@ -494,7 +493,7 @@ export function createPathFloatingLabels(curve) {
             const linkPanel = createTextPanel(link.text, {
               fontSize: 16,
               fontWeight: 500,
-              color: PROJECT_TEXT_COLOR,
+              color: LINK_TEXT_COLOR,
               worldWidth: 4.2,
               maxWidth: 320,
               y: link.y,
@@ -603,8 +602,10 @@ function lookAtPanelFactor(camera, panel) {
 }
 
 function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition, camera, dt) {
-  stop.userData.ring.material.opacity = ringProximity * 0.65;
-  stop.userData.ring.scale.set(0.85 + ringProximity * 0.25, 0.85 + ringProximity * 0.25, 1);
+  // Stronger floor so pink rings read clearly on the pale path.
+  stop.userData.ring.material.opacity = ringProximity * 0.95;
+  stop.userData.ring.visible = ringProximity > 0.02;
+  stop.userData.ring.scale.set(0.9 + ringProximity * 0.28, 0.9 + ringProximity * 0.28, 1);
 
   const fade = smoothstep(textProximity);
   const visible = fade > 0.008;
@@ -668,10 +669,13 @@ function applyProximity(stop, ringProximity, textProximity, elapsed, catPosition
     textMesh.material.opacity = fade;
     textMesh.visible = visible;
 
-    const glowOpacity =
-      visible && !document.body.classList.contains("control-mobile")
-        ? panel.userData.glowLevel * GLOW_MAX_OPACITY * (panel.userData.glowMaxOpacity ?? 1)
-        : 0;
+    const mobile = document.body.classList.contains("control-mobile");
+    const glowOpacity = visible
+      ? panel.userData.glowLevel *
+        GLOW_MAX_OPACITY *
+        (panel.userData.glowMaxOpacity ?? 1) *
+        (mobile ? MOBILE_GLOW_SCALE : 1)
+      : 0;
     glowMesh.material.opacity = glowOpacity;
     glowMesh.visible = glowOpacity > 0.008;
   });
