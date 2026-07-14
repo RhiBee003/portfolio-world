@@ -1,3 +1,6 @@
 node_modules
 dist
 .DS_Store
+
+# Purchased OST — keep local only (do not redistribute)
+public/audio/soundtrack.mp3
