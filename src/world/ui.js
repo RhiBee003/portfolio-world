@@ -256,7 +256,7 @@ export function createInput(canvas, options = {}) {
   }
 
   function updateState() {
-    const stickThreshold = 0.22;
+    const stickThreshold = 0.1;
     const stickForward = touchMove.active && touchMove.y < -stickThreshold;
     const stickBack = touchMove.active && touchMove.y > stickThreshold;
     const stickLeft = touchMove.active && touchMove.x < -stickThreshold;
@@ -271,7 +271,7 @@ export function createInput(canvas, options = {}) {
       state.lookDown = false;
       state.lookLeft = false;
       state.lookRight = false;
-      state.sprint = touchMove.active && Math.hypot(touchMove.x, touchMove.y) > 0.72;
+      state.sprint = touchMove.active && Math.hypot(touchMove.x, touchMove.y) > 0.4;
       return;
     }
 
@@ -435,10 +435,10 @@ export function createInput(canvas, options = {}) {
   let lookLastX = 0;
   let lookLastY = 0;
   let lookDragged = false;
-  const MOVE_RADIUS = 72;
-  const TAP_SLOP = 14;
+  const MOVE_RADIUS = 42;
+  const TAP_SLOP = 8;
   const DOUBLE_TAP_MS = 340;
-  const touchLookSensitivity = 0.004;
+  const touchLookSensitivity = 0.0085;
 
   function uiBlocksTouch(target) {
     return Boolean(

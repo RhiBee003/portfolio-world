@@ -333,6 +333,8 @@ export class CatController {
     }
 
     const speed = input.sprint && wish.lengthSq() > 0 ? this.sprint : this.speed;
+    const touchBoost = input.touchMode ? 1.22 : 1;
+    const stepSpeed = speed * touchBoost;
     this.isMoving = false;
 
     if (wish.lengthSq() > 0) {
