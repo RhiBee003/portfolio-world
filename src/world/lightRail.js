@@ -734,9 +734,64 @@ function createLightRailVehicle() {
       }
     }
 
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(width - 0.28, 0.14, len - 0.3), roofMat);
-    roof.position.y = height - 0.1;
-    section.add(roof);
+    // Fully enclosed clerestory roof with upper windows.
+    const shoulderY = height - 0.22;
+    const clerestoryH = 0.58;
+    const clerestoryHalfW = width * 0.26;
+
+    for (const side of [-1, 1]) {
+      const shoulder = new THREE.Mesh(
+        new THREE.BoxGeometry(width * 0.3, 0.12, len - 0.28),
+        roofMat
+      );
+      shoulder.position.set(side * (halfW - width * 0.16), shoulderY, 0);
+      section.add(shoulder);
+
+      const clerestoryFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, clerestoryH, len - 0.4),
+        charcoalMat
+      );
+      clerestoryFrame.position.set(side * clerestoryHalfW, shoulderY + clerestoryH * 0.5, 0);
+      section.add(clerestoryFrame);
+
+      const roofPanes = 5;
+      for (let i = 0; i < roofPanes; i += 1) {
+        const pane = new THREE.Mesh(
+          new THREE.BoxGeometry(0.035, clerestoryH - 0.12, (len - 0.8) / roofPanes - 0.08),
+          clearGlass
+        );
+        const zLocal = -len * 0.36 + i * ((len - 0.55) / roofPanes);
+        pane.position.set(side * (clerestoryHalfW + 0.02), shoulderY + clerestoryH * 0.5, zLocal);
+        pane.renderOrder = 2;
+        section.add(pane);
+      }
+    }
+
+    // Cap the roof completely; skylight strip down the center.
+    const roofCap = new THREE.Mesh(
+      new THREE.BoxGeometry(clerestoryHalfW * 2 + 0.18, 0.1, len - 0.28),
+      roofMat
+    );
+    roofCap.position.y = shoulderY + clerestoryH + 0.02;
+    section.add(roofCap);
+
+    const skyStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(clerestoryHalfW * 1.15, 0.04, len - 0.7),
+      clearGlass
+    );
+    skyStrip.position.y = shoulderY + clerestoryH + 0.08;
+    skyStrip.renderOrder = 2;
+    section.add(skyStrip);
+
+    // End bulkheads so the clerestory reads sealed at section tips.
+    for (const end of [-1, 1]) {
+      const bulk = new THREE.Mesh(
+        new THREE.BoxGeometry(clerestoryHalfW * 2 + 0.12, clerestoryH + 0.08, 0.08),
+        roofMat
+      );
+      bulk.position.set(0, shoulderY + clerestoryH * 0.5, end * (len * 0.5 - 0.18));
+      section.add(bulk);
+    }
 
     train.add(section);
   }
@@ -760,6 +815,27 @@ function createLightRailVehicle() {
   );
   bellowsFloor.position.y = floorY + 0.02;
   bellows.add(bellowsFloor);
+
+  // Enclosed roof bridge over the articulation joint.
+  const bellowsRoof = new THREE.Mesh(
+    new THREE.BoxGeometry(width - 0.45, 0.12, 1.35),
+    roofMat
+  );
+  bellowsRoof.position.y = height - 0.08;
+  bellows.add(bellowsRoof);
+  const bellowsClere = new THREE.Mesh(
+    new THREE.BoxGeometry(width * 0.52, 0.5, 1.2),
+    charcoalMat
+  );
+  bellowsClere.position.y = height + 0.2;
+  bellows.add(bellowsClere);
+  const bellowsSky = new THREE.Mesh(
+    new THREE.BoxGeometry(width * 0.36, 0.04, 1.0),
+    clearGlass
+  );
+  bellowsSky.position.y = height + 0.48;
+  bellowsSky.renderOrder = 2;
+  bellows.add(bellowsSky);
   train.add(bellows);
 
   function addCab(sign) {
@@ -866,21 +942,21 @@ function createLightRailVehicle() {
     });
   }
 
-  // Pantograph (Link OCS).
-  const pantographReach = LIGHT_RAIL_OCS.wireHeight - height + floorY + 0.08;
+  // Pantograph sits on the enclosed clerestory roof.
+  const pantographReach = LIGHT_RAIL_OCS.wireHeight - (height + 0.55) + floorY + 0.08;
   const panBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 1.25), metalMat);
-  panBase.position.set(0, height - 0.02, 1.2);
+  panBase.position.set(0, height + 0.52, 1.2);
   train.add(panBase);
 
   for (const side of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.05, pantographReach, 0.05), metalMat);
-    arm.position.set(side * 0.35, height + pantographReach * 0.5 - 0.02, 1.2);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.05, Math.max(0.35, pantographReach), 0.05), metalMat);
+    arm.position.set(side * 0.35, height + 0.52 + Math.max(0.35, pantographReach) * 0.5, 1.2);
     arm.rotation.z = side * 0.12;
     train.add(arm);
   }
 
   const contactHead = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.07, 0.28), metalMat);
-  contactHead.position.set(0, height + pantographReach - 0.05, 1.2);
+  contactHead.position.set(0, height + 0.52 + Math.max(0.35, pantographReach) - 0.05, 1.2);
   train.add(contactHead);
 
   // Floor + longitudinal seating (aisle down the middle).
@@ -952,6 +1028,50 @@ function createLightRailVehicle() {
     endGlass.renderOrder = 2;
     interior.add(endGlass);
   }
+
+  // Interior ceiling / clerestory so the cabin feels fully roofed from inside.
+  const ceilingY = floorY + 2.72;
+  const ceiling = new THREE.Mesh(
+    new THREE.BoxGeometry(width - 0.55, 0.06, length - 3.0),
+    linkMat(0xf2f4f6, { roughness: 0.78, metalness: 0.05 })
+  );
+  ceiling.position.set(0, ceilingY, 0);
+  interior.add(ceiling);
+
+  const clerestoryHalfW = width * 0.26;
+  for (const side of [-1, 1]) {
+    const upperWall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.55, length - 3.2),
+      whiteMat
+    );
+    upperWall.position.set(side * (clerestoryHalfW - 0.02), ceilingY + 0.32, 0);
+    interior.add(upperWall);
+
+    for (const z of [-6.5, -3.25, 0, 3.25, 6.5]) {
+      const roofPane = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.42, 2.0),
+        clearGlass
+      );
+      roofPane.position.set(side * (clerestoryHalfW + 0.02), ceilingY + 0.32, z);
+      roofPane.renderOrder = 2;
+      interior.add(roofPane);
+    }
+  }
+
+  const skylight = new THREE.Mesh(
+    new THREE.BoxGeometry(clerestoryHalfW * 1.2, 0.04, length - 3.4),
+    clearGlass
+  );
+  skylight.position.set(0, ceilingY + 0.58, 0);
+  skylight.renderOrder = 2;
+  interior.add(skylight);
+
+  const roofLiner = new THREE.Mesh(
+    new THREE.BoxGeometry(clerestoryHalfW * 2.15, 0.08, length - 3.1),
+    roofMat
+  );
+  roofLiner.position.set(0, ceilingY + 0.64, 0);
+  interior.add(roofLiner);
 
   const { seat } = LIGHT_RAIL_CAR;
   const cabZ = halfL - seat.cabinOffset;
