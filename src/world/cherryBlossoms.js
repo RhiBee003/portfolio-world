@@ -12,22 +12,50 @@ const GROVE_ROUTES = {
     new THREE.Vector3(-24, 0, 10.5),
     new THREE.Vector3(-31, 0, 7.5),
   ],
+  /** North station approach — both sides of the connector. */
   lightRailNorth: [
-    new THREE.Vector3(2.4, 0, 26.5),
-    new THREE.Vector3(12, 0, 27),
-    new THREE.Vector3(22, 0, 27.1),
-    new THREE.Vector3(31, 0, 27),
+    new THREE.Vector3(3.5, 0, 22.2),
+    new THREE.Vector3(8.5, 0, 22.0),
+    new THREE.Vector3(14.5, 0, 21.8),
+    new THREE.Vector3(20.5, 0, 22.0),
+    new THREE.Vector3(26.5, 0, 22.4),
+    new THREE.Vector3(3.5, 0, 31.2),
+    new THREE.Vector3(9.0, 0, 31.4),
+    new THREE.Vector3(15.0, 0, 31.5),
+    new THREE.Vector3(21.0, 0, 31.3),
+    new THREE.Vector3(27.0, 0, 30.8),
   ],
+  /** South station approach — both sides of the connector. */
   lightRailSouth: [
-    new THREE.Vector3(2.4, 0, -134.5),
-    new THREE.Vector3(12, 0, -134.8),
-    new THREE.Vector3(22, 0, -135),
-    new THREE.Vector3(31, 0, -135),
+    new THREE.Vector3(3.5, 0, -130.8),
+    new THREE.Vector3(9.0, 0, -130.5),
+    new THREE.Vector3(15.0, 0, -130.4),
+    new THREE.Vector3(21.0, 0, -130.6),
+    new THREE.Vector3(27.0, 0, -131.0),
+    new THREE.Vector3(3.5, 0, -139.0),
+    new THREE.Vector3(9.0, 0, -139.2),
+    new THREE.Vector3(15.0, 0, -139.4),
+    new THREE.Vector3(21.0, 0, -139.2),
+    new THREE.Vector3(27.0, 0, -138.8),
+  ],
+  /** West flank of the elevated guideway between stations. */
+  lightRailMid: [
+    new THREE.Vector3(27.6, 0, 16),
+    new THREE.Vector3(27.4, 0, 6),
+    new THREE.Vector3(27.2, 0, -6),
+    new THREE.Vector3(27.0, 0, -20),
+    new THREE.Vector3(26.9, 0, -36),
+    new THREE.Vector3(26.8, 0, -52),
+    new THREE.Vector3(26.9, 0, -70),
+    new THREE.Vector3(27.1, 0, -88),
+    new THREE.Vector3(27.3, 0, -104),
+    new THREE.Vector3(27.5, 0, -120),
   ],
 };
 
-const TREE_CLEAR_RADIUS = 2.4;
+const TREE_CLEAR_RADIUS = 2.2;
 const MIN_TREE_SEPARATION = 10;
+const MIN_TREE_SEPARATION_RAIL = 6.2;
 const PATH_CLEARANCE = 6.2;
 const PATH_SAMPLES = 40;
 
@@ -177,8 +205,8 @@ function distToPath(x, z, pathSamples) {
   return Math.sqrt(min);
 }
 
-function isTooCloseToOtherTrees(x, z, placed) {
-  const minSq = MIN_TREE_SEPARATION * MIN_TREE_SEPARATION;
+function isTooCloseToOtherTrees(x, z, placed, minSeparation = MIN_TREE_SEPARATION) {
+  const minSq = minSeparation * minSeparation;
   for (const p of placed) {
     const dx = x - p.x;
     const dz = z - p.z;
@@ -192,7 +220,7 @@ function canPlaceTree(x, z, ctx) {
   if (blocksLightRailPlacement(x, z)) return false;
   if (distToPath(x, z, ctx.pathSamples) < PATH_CLEARANCE) return false;
   if (ctx.checkCollision(x, z, TREE_CLEAR_RADIUS, ctx.collisions)) return false;
-  if (isTooCloseToOtherTrees(x, z, ctx.placed)) return false;
+  if (isTooCloseToOtherTrees(x, z, ctx.placed, ctx.minSeparation)) return false;
   return true;
 }
 
@@ -298,25 +326,47 @@ export function createCherryBlossoms({ pathCurve, collisions, checkCollision }) 
 
   const rand = seededRandom(41);
   const pathSamples = buildPathSamples(pathCurve);
-  const ctx = { pathSamples, collisions, checkCollision, placed };
+  const ctx = { pathSamples, collisions, checkCollision, placed, minSeparation: MIN_TREE_SEPARATION };
+  const railCtx = { ...ctx, minSeparation: MIN_TREE_SEPARATION_RAIL };
 
-  const curves = Object.values(GROVE_ROUTES).map(
-    (points) => new THREE.CatmullRomCurve3(points, false, "catmullrom", 0.38)
-  );
+  const needleCurve = new THREE.CatmullRomCurve3(GROVE_ROUTES.spaceNeedle, false, "catmullrom", 0.38);
+  const northCurve = new THREE.CatmullRomCurve3(GROVE_ROUTES.lightRailNorth, false, "catmullrom", 0.38);
+  const southCurve = new THREE.CatmullRomCurve3(GROVE_ROUTES.lightRailSouth, false, "catmullrom", 0.38);
+  const midCurve = new THREE.CatmullRomCurve3(GROVE_ROUTES.lightRailMid, false, "catmullrom", 0.38);
 
-  addTreesAlongCurve(group, curves[0], rand, petalTrail, samples, placed, ctx, {
+  addTreesAlongCurve(group, needleCurve, rand, petalTrail, samples, placed, ctx, {
     slotCount: 4,
     sideOffset: 5.2,
     skipEnds: 0.15,
   });
-  addTreesAlongCurve(group, curves[1], rand, petalTrail, samples, placed, ctx, {
-    slotCount: 3,
-    sideOffset: 4.2,
+  addTreesAlongCurve(group, northCurve, rand, petalTrail, samples, placed, railCtx, {
+    slotCount: 8,
+    sideOffset: 2.6,
+    skipEnds: 0.06,
   });
-  addTreesAlongCurve(group, curves[2], rand, petalTrail, samples, placed, ctx, {
-    slotCount: 3,
-    sideOffset: 4.2,
+  addTreesAlongCurve(group, southCurve, rand, petalTrail, samples, placed, railCtx, {
+    slotCount: 8,
+    sideOffset: 2.6,
+    skipEnds: 0.06,
   });
+  addTreesAlongCurve(group, midCurve, rand, petalTrail, samples, placed, railCtx, {
+    slotCount: 10,
+    sideOffset: 3.2,
+    skipEnds: 0.04,
+  });
+  // Extra clustered plantings near each station plaza.
+  for (const [bx, bz] of [
+    [24.5, 24.8],
+    [25.2, 29.5],
+    [28.8, 25.5],
+    [29.2, 29.0],
+    [24.5, -132.8],
+    [25.2, -137.2],
+    [28.8, -133.2],
+    [29.2, -136.6],
+  ]) {
+    tryPlaceAt(group, bx, bz, rand, petalTrail, samples, placed, railCtx);
+  }
   addTreesAlongPathSegment(group, pathCurve, 0.1, 0.32, rand, petalTrail, samples, placed, ctx, {
     slotCount: 4,
     sideOffset: 6.8,
