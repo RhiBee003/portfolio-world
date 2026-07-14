@@ -396,9 +396,9 @@ function createStation(curve, pathT, label, towardPathX) {
   plaza.receiveShadow = true;
   deck.add(plaza);
 
-  // Filler tongue that overlaps the connector end so the joint never gaps.
-  const tongue = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.09, 6.2), concrete);
-  tongue.position.set(plazaX + rampDir * (plazaW * 0.5 + 0.9), walkY, 0);
+  // Filler tongue that overlaps the short connector pad so the joint never gaps.
+  const tongue = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.09, 6.2), concrete);
+  tongue.position.set(plazaX + rampDir * (plazaW * 0.5 + 1.5), walkY, 0);
   tongue.receiveShadow = true;
   deck.add(tongue);
 
@@ -536,7 +536,7 @@ function createStation(curve, pathT, label, towardPathX) {
 
   // Cat flag outside the canopy on the path/connector edge so it reads as a landmark.
   const catFlag = createPlazaCatFlag(rampDir);
-  catFlag.position.set(plazaX + rampDir * (plazaW * 0.5 + 2.05), 0, 0);
+  catFlag.position.set(plazaX + rampDir * (plazaW * 0.5 + 2.35), 0, 0);
   deck.add(catFlag);
 
   group.add(deck);
@@ -993,11 +993,14 @@ function createLightRailVehicle() {
   interior.name = "train-interior";
   train.add(interior);
 
+  const floorLift = LIGHT_RAIL_CAR.interiorFloorLift ?? 0;
+  const cabinFloorY = floorY + floorLift;
+
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(width - 0.35, 0.06, length - 2.6),
     linkMat(0x6a7078, { roughness: 0.92 })
   );
-  floor.position.set(0, floorY, 0);
+  floor.position.set(0, cabinFloorY, 0);
   interior.add(floor);
 
   const seatMat = linkMat(0x4a5560, { roughness: 0.85 });
@@ -1007,7 +1010,7 @@ function createLightRailVehicle() {
   for (const side of [-1, 1]) {
     for (const z of seatZs) {
       const unit = createSeatUnit(seatMat, seatBackMat);
-      unit.position.set(side * (halfW - 0.58), floorY + 0.42, z);
+      unit.position.set(side * (halfW - 0.58), cabinFloorY + 0.42, z);
       unit.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
       interior.add(unit);
       seatPads.push({
@@ -1015,7 +1018,7 @@ function createLightRailVehicle() {
         z,
         halfX: 0.38,
         halfZ: 0.32,
-        feetY: LIGHT_RAIL_CAR.seat.y,
+        feetY: LIGHT_RAIL_CAR.passengerFloorY,
       });
     }
   }
@@ -1026,14 +1029,14 @@ function createLightRailVehicle() {
       new THREE.BoxGeometry(0.05, 0.95, length - 3.2),
       whiteMat
     );
-    wallLower.position.set(side * (halfW - 0.14), floorY + 0.72, 0);
+    wallLower.position.set(side * (halfW - 0.14), cabinFloorY + 0.58, 0);
     interior.add(wallLower);
 
     const wallUpper = new THREE.Mesh(
       new THREE.BoxGeometry(0.05, 0.45, length - 3.2),
       whiteMat
     );
-    wallUpper.position.set(side * (halfW - 0.14), floorY + 2.35, 0);
+    wallUpper.position.set(side * (halfW - 0.14), cabinFloorY + 2.2, 0);
     interior.add(wallUpper);
 
     for (const z of [-6, -2, 2, 6]) {
@@ -1041,7 +1044,7 @@ function createLightRailVehicle() {
         new THREE.BoxGeometry(0.04, 1.15, 2.4),
         clearGlass
       );
-      pane.position.set(side * (halfW - 0.08), floorY + 1.75, z);
+      pane.position.set(side * (halfW - 0.08), cabinFloorY + 1.55, z);
       pane.renderOrder = 2;
       interior.add(pane);
     }
@@ -1053,13 +1056,13 @@ function createLightRailVehicle() {
       new THREE.BoxGeometry(width - 0.7, 1.2, 0.04),
       clearGlass
     );
-    endGlass.position.set(0, floorY + 1.55, sign * (halfL - 1.35));
+    endGlass.position.set(0, cabinFloorY + 1.35, sign * (halfL - 1.35));
     endGlass.renderOrder = 2;
     interior.add(endGlass);
   }
 
   // Interior ceiling / clerestory so the cabin feels fully roofed from inside.
-  const ceilingY = floorY + 2.72;
+  const ceilingY = cabinFloorY + 2.55;
   const ceiling = new THREE.Mesh(
     new THREE.BoxGeometry(width - 0.55, 0.06, length - 3.0),
     linkMat(0xf2f4f6, { roughness: 0.78, metalness: 0.05 })

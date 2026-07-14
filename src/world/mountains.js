@@ -58,8 +58,8 @@ function createRidgeMesh(opts) {
   const pos = geo.attributes.position;
   const colors = new Float32Array(pos.count * 3);
   const base = new THREE.Color(color);
-  const snow = new THREE.Color(0xe8e4ea);
-  const foothill = new THREE.Color(0x6a6e68);
+  const snow = new THREE.Color(0xf2e8ee);
+  const foothill = new THREE.Color(0x7a7078);
   const tmp = new THREE.Color();
 
   for (let i = 0; i < pos.count; i += 1) {
@@ -107,7 +107,7 @@ function createRidgeMesh(opts) {
 function createPineSilhouette(x, z, h, tint) {
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.14, h * 0.22, 5),
-    new THREE.MeshStandardMaterial({ color: 0x3a342e, roughness: 1, fog: true })
+    new THREE.MeshStandardMaterial({ color: 0x4a4248, roughness: 1, fog: true })
   );
   trunk.position.set(x, h * 0.11, z);
 
@@ -140,7 +140,7 @@ export function createMountainLandscape() {
       ridgeHalfDepth: 16,
       halfWidth: 68,
       detail: 1.15,
-      color: 0x7a8478,
+      color: 0xa898a4,
     })
   );
 
@@ -158,7 +158,7 @@ export function createMountainLandscape() {
       ridgeHalfDepth: 24,
       halfWidth: 88,
       detail: 1.35,
-      color: 0x6d7682,
+      color: 0x8a8290,
     })
   );
 
@@ -176,13 +176,13 @@ export function createMountainLandscape() {
       ridgeHalfDepth: 30,
       halfWidth: 100,
       detail: 1.5,
-      color: 0x8a8492,
+      color: 0xb8a8b4,
       fogged: true,
     })
   );
 
-  // Sparse pine band on the near foothills.
-  const pineTint = 0x4a5648;
+  // Sparse silhouette trees on the near foothills — mauve, not green.
+  const pineTint = 0x6a6070;
   for (let i = 0; i < 28; i += 1) {
     const t = i / 27;
     const x = -52 + t * 108 + (hash2(i, 3) - 0.5) * 6;

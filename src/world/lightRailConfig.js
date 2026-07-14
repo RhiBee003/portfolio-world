@@ -48,7 +48,7 @@ export const LIGHT_RAIL_CAR = {
   seat: {
     x: 0,
     cabinOffset: 2.35,
-    y: 1.05,
+    y: 1.32,
   },
   /**
    * First-person cabin feel: car expands while boarded so the aisle
@@ -57,8 +57,10 @@ export const LIGHT_RAIL_CAR = {
   interiorScale: 1.72,
   /** Extra vertical stretch so floor clearance and standing height feel taller. */
   interiorScaleY: 2.35,
-  /** Stand a bit taller on the cabin floor while aboard. */
-  passengerFloorY: 0.38,
+  /** Lift the visible cabin floor (and cat) above the shell floor while aboard. */
+  interiorFloorLift: 0.48,
+  /** Stand on the raised cabin floor while aboard (local Y above track bed). */
+  passengerFloorY: 0.66,
   /** Cat mesh scale while walking the cabin. */
   passengerCatScale: 1.42,
   /** Local walkable half-sizes (before scale) — keeps the cat inside the shell. */
@@ -77,7 +79,8 @@ export const LIGHT_RAIL_OCS = {
 
 /** Walkways from the main path out to each station (keep clear of buildings). */
 export const LIGHT_RAIL_CONNECTORS = [
-  { x0: 0.5, x1: 24.5, z0: 23.5, z1: 29.5, y: 0.04 },
+  /** Start station pad — short stub by the platform (mirrors the end stop). */
+  { x0: 22.5, x1: 31.5, z0: 23.5, z1: 29.5, y: 0.04 },
   /** End station pad only — do not bridge across the fountain roundabout. */
   { x0: 22.5, x1: 31.5, z0: -137.0, z1: -132.0, y: 0.04 },
 ];
